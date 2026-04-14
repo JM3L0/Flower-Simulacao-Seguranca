@@ -120,76 +120,33 @@ def train(net, trainloader, epochs, lr, device):
     return avg_trainloss
 
 
-def train_with_attack(net, trainloader, epochs, lr, device, poison_rate=0.0):
-    """Train the model with optional poisoning attack (label flipping).
-
-    Esta função implementa o treinamento local com um hook estruturado
-    para ataques de envenenamento. A lógica de ataque é aplicada por batch,
-    manipulando uma fração dos rótulos conforme a taxa de envenenamento.
-
-    Args:
-        net: Modelo a ser treinado.
-        trainloader: DataLoader com dados de treinamento locais.
-        epochs: Número de épocas locais.
-        lr: Taxa de aprendizado.
-        device: Dispositivo de computação (CPU/GPU).
-        poison_rate: Fração dos rótulos a envenenar (0.0 = sem ataque, 1.0 = todos).
-
-    Returns:
-        Tuple (avg_train_loss, num_poisoned_samples): perda média e total de
-        amostras envenenadas durante o treinamento.
-    """
+def train_with_attack(net, trainloader, epochs, lr, device, poison_rate=0.0, attack_type="label_flipping"):
+    """Train the model with optional poisoning attack dynamically selected."""
     net.to(device)
     criterion = torch.nn.CrossEntropyLoss().to(device)
     optimizer = torch.optim.SGD(net.parameters(), lr=lr, momentum=0.9)
     net.train()
     running_loss = 0.0
     total_poisoned = 0
-    num_classes = 10  # CIFAR-10 possui 10 classes
+    
+    # Importar funções de ataque
+    from pytorchexample.attacks import apply_label_flipping, apply_gaussian_noise
 
     for _ in range(epochs):
         for batch in trainloader:
             images = batch["img"].to(device)
             labels = batch["label"].to(device)
 
-            # =================================================================
-            # >>> HOOK DE ATAQUE DE ENVENENAMENTO (Label Flipping) <<<
-            #
-            # Lógica atual: Para cada amostra no batch, com probabilidade
-            # igual a `poison_rate`, o rótulo é invertido para um rótulo
-            # aleatório diferente do original.
-            #
-            # PERSONALIZAÇÕES SUGERIDAS:
-            #
-            # 1. Label Flipping Direcionado (inspirado em FedDebug):
-            #    Trocar rótulos de uma classe específica para outra.
-            #    Ex: labels[labels == 3] = 5  (avião → cachorro)
-            #
-            # 2. Label Flipping Aleatório (implementação atual):
-            #    Cada amostra envenenada recebe um rótulo aleatório ≠ original.
-            #
-            # 3. Corrupção de Features (inspirado em FLANDERS):
-            #    Em vez de alterar rótulos, adicionar ruído gaussiano às imagens:
-            #    images += torch.randn_like(images) * noise_scale
-            #
-            # 4. Gradient Manipulation:
-            #    Após calcular gradientes, inverter sua direção:
-            #    for p in net.parameters(): p.grad.data *= -1
-            #
-            # Para desativar o ataque, basta setar poison_rate = 0.0
-            # =================================================================
             if poison_rate > 0.0:
-                batch_size = labels.size(0)
-                num_to_poison = int(batch_size * poison_rate)
-                if num_to_poison > 0:
-                    # Selecionar índices aleatórios para envenenar
-                    poison_indices = random.sample(range(batch_size), num_to_poison)
-                    for idx in poison_indices:
-                        original_label = labels[idx].item()
-                        # Gerar rótulo diferente do original
-                        new_label = (original_label + random.randint(1, num_classes - 1)) % num_classes
-                        labels[idx] = new_label
-                    total_poisoned += num_to_poison
+                if attack_type == "label_flipping":
+                    labels, num_poisoned = apply_label_flipping(labels, poison_rate)
+                    total_poisoned += num_poisoned
+                elif attack_type == "gaussian_noise":
+                    images, num_poisoned = apply_gaussian_noise(images, poison_rate)
+                    total_poisoned += num_poisoned
+                else:
+                    # Se o tipo de ataque não for reconhecido, não ataca
+                    pass
 
             optimizer.zero_grad()
             loss = criterion(net(images), labels)

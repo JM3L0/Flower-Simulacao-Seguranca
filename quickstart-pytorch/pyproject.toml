@@ -33,3 +33,4 @@ batch-size = 32
 poison_rate = 0.2
 dirichlet_alpha = 1.0
 defense_mode = "FedAvg"
+attack_type = "label_flipping"

@@ -59,6 +59,7 @@ def carregar_experimentos(diretorio: str) -> list[dict]:
         config = data.get("experiment_config", {})
         label = (
             f"{config.get('strategy', '?')} | "
+            f"ATK={config.get('attack_type', '?')} | "
             f"PR={config.get('poison_rate', '?')} | "
             f"DA={config.get('dirichlet_alpha', '?')}"
         )

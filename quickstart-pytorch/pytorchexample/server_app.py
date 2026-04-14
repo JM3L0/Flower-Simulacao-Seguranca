@@ -31,11 +31,13 @@ def main(grid: Grid, context: Context) -> None:
     poison_rate: float = context.run_config["poison_rate"]
     dirichlet_alpha: float = context.run_config["dirichlet_alpha"]
     modo_defesa: str = context.run_config["defense_mode"]
+    attack_type: str = context.run_config.get("attack_type", "label_flipping")
 
     print("=" * 70)
     print("  AMBIENTE DE EXPERIMENTAÇÃO EM SEGURANÇA FEDERADA")
     print("=" * 70)
     print(f"  Estratégia:       {modo_defesa}")
+    print(f"  Tipo de Ataque:   {attack_type}")
     print(f"  Rodadas:          {num_rounds}")
     print(f"  Taxa de Ataque:   {poison_rate}")
     print(f"  Dirichlet Alpha:  {dirichlet_alpha}")
@@ -89,6 +91,7 @@ def main(grid: Grid, context: Context) -> None:
     # =========================================================================
     experiment_config = {
         "strategy": modo_defesa,
+        "attack_type": attack_type,
         "num_server_rounds": num_rounds,
         "poison_rate": poison_rate,
         "dirichlet_alpha": dirichlet_alpha,
@@ -119,7 +122,7 @@ def main(grid: Grid, context: Context) -> None:
     # Nome único baseado na configuração do cenário
     timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
     summary_filename = (
-        f"metrics_{modo_defesa}_pr{poison_rate}_da{dirichlet_alpha}_{timestamp_str}.json"
+        f"metrics_{modo_defesa}_{attack_type}_pr{poison_rate}_da{dirichlet_alpha}_{timestamp_str}.json"
     )
     summary_file = os.path.join(METRICS_DIR, summary_filename)
     with open(summary_file, "w", encoding="utf-8") as f:

@@ -32,6 +32,7 @@ def train(msg: Message, context: Context):
     batch_size = context.run_config["batch-size"]
     taxa_ataque = context.run_config["poison_rate"]
     dirichlet_alpha = context.run_config["dirichlet_alpha"]
+    attack_type = context.run_config.get("attack_type", "label_flipping")
 
     # Load the data with Dirichlet-based non-IID partitioning
     trainloader, _ = load_data(
@@ -40,13 +41,6 @@ def train(msg: Message, context: Context):
 
     # =========================================================================
     # TREINAMENTO COM ATAQUE DE ENVENENAMENTO
-    # A taxa_ataque controla a fração de rótulos invertidos (label flipping).
-    # - taxa_ataque = 0.0 → treinamento limpo (sem ataque)
-    # - taxa_ataque = 0.2 → 20% dos rótulos invertidos por batch
-    # - taxa_ataque = 1.0 → todos os rótulos invertidos (ataque máximo)
-    #
-    # Para plugar lógicas alternativas de ataque (ex: FedDebug, FLANDERS),
-    # edite a função train_with_attack() em task.py.
     # =========================================================================
     train_loss, num_poisoned = train_with_attack(
         model,
@@ -55,13 +49,14 @@ def train(msg: Message, context: Context):
         msg.content["config"]["lr"],
         device,
         poison_rate=taxa_ataque,
+        attack_type=attack_type,
     )
 
     is_poisoned = 1.0 if taxa_ataque > 0.0 else 0.0
     print(
         f"[Cliente {partition_id}] loss={train_loss:.4f} | "
-        f"envenenado={'SIM' if is_poisoned else 'NAO'} | "
-        f"amostras_envenenadas={num_poisoned} | "
+        f"ataque={attack_type} | "
+        f"amostras_corrompidas={num_poisoned} | "
         f"taxa_ataque={taxa_ataque}"
     )
 

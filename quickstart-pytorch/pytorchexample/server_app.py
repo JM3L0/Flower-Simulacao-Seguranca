@@ -74,9 +74,9 @@ def main(grid: Grid, context: Context) -> None:
         strategy = FedAvg(fraction_evaluate=fraction_evaluate)
         print("[Defesa] Estratégia FedAvg (baseline) instanciada.")
     elif modo_defesa == "Krum":
-        # num_malicious_clients é obrigatório. Sem saber quantos criminosos
+        # num_malicious_nodes é obrigatório. Sem saber quantos criminosos
         # existem, a defesa supõe pelo menos 1
-        strategy = Krum(fraction_evaluate=fraction_evaluate, num_malicious_clients=1, num_clients_to_keep=1)
+        strategy = Krum(fraction_evaluate=fraction_evaluate, num_malicious_nodes=1)
         print("[Defesa] Estratégia Krum instanciada.")
     else:
         print(f"[AVISO] Estratégia '{modo_defesa}' não reconhecida. Usando FedAvg.")

@@ -116,7 +116,12 @@ def main(grid: Grid, context: Context) -> None:
         "total_rounds_completed": len(all_rounds_data),
     }
 
-    summary_file = os.path.join(METRICS_DIR, "metrics_summary.json")
+    # Nome único baseado na configuração do cenário
+    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    summary_filename = (
+        f"metrics_{modo_defesa}_pr{poison_rate}_da{dirichlet_alpha}_{timestamp_str}.json"
+    )
+    summary_file = os.path.join(METRICS_DIR, summary_filename)
     with open(summary_file, "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2, ensure_ascii=False)
 

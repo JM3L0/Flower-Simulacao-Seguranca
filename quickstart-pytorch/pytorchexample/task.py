@@ -5,11 +5,11 @@ import random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from datasets import load_dataset
-from flwr_datasets import FederatedDataset
-from flwr_datasets.partitioner import DirichletPartitioner
+from datasets import load_dataset #type: ignore
+from flwr_datasets import FederatedDataset #type: ignore
+from flwr_datasets.partitioner import DirichletPartitioner #type: ignore
 from torch.utils.data import DataLoader
-from torchvision.transforms import Compose, Normalize, ToTensor
+from torchvision.transforms import Compose, Normalize, ToTensor #type: ignore
 
 
 class Net(nn.Module):

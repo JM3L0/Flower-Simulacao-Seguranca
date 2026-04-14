@@ -7,7 +7,7 @@ from datetime import datetime
 import torch
 from flwr.app import ArrayRecord, ConfigRecord, Context, MetricRecord
 from flwr.serverapp import Grid, ServerApp
-from flwr.serverapp.strategy import Bulyan, FedAvg, FedMedian
+from flwr.serverapp.strategy import Bulyan, FedAvg, FedMedian, Krum
 
 from pytorchexample.task import Net, load_centralized_dataset, test
 
@@ -62,6 +62,7 @@ def main(grid: Grid, context: Context) -> None:
     # FedAvg   — Baseline sem defesa robusta (média simples dos pesos)
     # FedMedian — Agregação via mediana coordenada-a-coordenada (robusto)
     # Bulyan   — Defesa bizantina avançada (filtra outliers + média trimmed)
+    # Krum     — Defesa agressiva que seleciona 1 único modelo central
     # =========================================================================
     if modo_defesa == "FedMedian":
         strategy = FedMedian(fraction_evaluate=fraction_evaluate)
@@ -72,6 +73,11 @@ def main(grid: Grid, context: Context) -> None:
     elif modo_defesa == "FedAvg":
         strategy = FedAvg(fraction_evaluate=fraction_evaluate)
         print("[Defesa] Estratégia FedAvg (baseline) instanciada.")
+    elif modo_defesa == "Krum":
+        # num_malicious_clients é obrigatório. Sem saber quantos criminosos
+        # existem, a defesa supõe pelo menos 1
+        strategy = Krum(fraction_evaluate=fraction_evaluate, num_malicious_clients=1, num_clients_to_keep=1)
+        print("[Defesa] Estratégia Krum instanciada.")
     else:
         print(f"[AVISO] Estratégia '{modo_defesa}' não reconhecida. Usando FedAvg.")
         strategy = FedAvg(fraction_evaluate=fraction_evaluate)

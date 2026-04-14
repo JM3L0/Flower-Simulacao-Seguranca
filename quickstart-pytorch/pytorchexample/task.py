@@ -122,6 +122,12 @@ def train(net, trainloader, epochs, lr, device):
 
 def train_with_attack(net, trainloader, epochs, lr, device, poison_rate=0.0, attack_type="label_flipping"):
     """Train the model with optional poisoning attack dynamically selected."""
+    
+    # === FREE-RIDER ATTACK ===
+    if attack_type == "free_rider":
+        print("[AVISO] Ataque Free-Rider ativou. Pulando processamento local...")
+        return 0.0, 0
+
     net.to(device)
     criterion = torch.nn.CrossEntropyLoss().to(device)
     optimizer = torch.optim.SGD(net.parameters(), lr=lr, momentum=0.9)
@@ -129,8 +135,11 @@ def train_with_attack(net, trainloader, epochs, lr, device, poison_rate=0.0, att
     running_loss = 0.0
     total_poisoned = 0
     
-    # Importar funções de ataque
-    from pytorchexample.attacks import apply_label_flipping, apply_gaussian_noise
+    from pytorchexample.attacks import (
+        apply_label_flipping, apply_gaussian_noise, 
+        apply_targeted_backdoor, apply_trigger_patch,
+        apply_gradient_ascent, apply_model_replacement
+    )
 
     for _ in range(epochs):
         for batch in trainloader:
@@ -144,15 +153,34 @@ def train_with_attack(net, trainloader, epochs, lr, device, poison_rate=0.0, att
                 elif attack_type == "gaussian_noise":
                     images, num_poisoned = apply_gaussian_noise(images, poison_rate)
                     total_poisoned += num_poisoned
-                else:
-                    # Se o tipo de ataque não for reconhecido, não ataca
-                    pass
+                elif attack_type == "targeted_backdoor":
+                    labels, num_poisoned = apply_targeted_backdoor(labels, poison_rate)
+                    total_poisoned += num_poisoned
+                elif attack_type == "trigger_patch":
+                    images, labels, num_poisoned = apply_trigger_patch(images, labels, poison_rate)
+                    total_poisoned += num_poisoned
+                # gradient_ascent e model_replacement são lidados abaixo
 
             optimizer.zero_grad()
             loss = criterion(net(images), labels)
+            
+            # --- INTERCEPTAÇÃO: Gradient Ascent ---
+            if attack_type == "gradient_ascent":
+                # Marca as amostras locais como afetadas pelo ataque matemático inteiro
+                total_poisoned += labels.size(0)
+                loss = apply_gradient_ascent(loss)
+
             loss.backward()
             optimizer.step()
-            running_loss += loss.item()
+            
+            # Usar valor absoluto no debug para não exibir log negativo que confunde
+            running_loss += abs(loss.item())
+
+    # --- INTERCEPTAÇÃO: Model Replacement / Scaling ---
+    if attack_type == "model_replacement":
+        apply_model_replacement(net)
+        # Marca todas do cliente como envenenadas no contexto da substituição global
+        total_poisoned = len(trainloader.dataset)
 
     avg_trainloss = running_loss / (epochs * len(trainloader))
     return avg_trainloss, total_poisoned

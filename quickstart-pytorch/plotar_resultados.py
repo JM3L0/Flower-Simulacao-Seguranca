@@ -81,12 +81,12 @@ def plotar_comparativo(experimentos: list[dict], output_dir: str):
 
     os.makedirs(output_dir, exist_ok=True)
 
-    fig, (ax_acc, ax_loss) = plt.subplots(1, 2, figsize=(14, 6))
+    # === GRAFICO DE ACURACIA ===
+    fig_acc, ax_acc = plt.subplots(figsize=(10, 6))
 
     for i, exp in enumerate(experimentos):
         rounds = [r["round"] for r in exp["rounds"]]
         accuracies = [r["accuracy"] for r in exp["rounds"]]
-        losses = [r["loss"] for r in exp["rounds"]]
 
         color = COLORS[i % len(COLORS)]
         marker = MARKERS[i % len(MARKERS)]
@@ -95,29 +95,43 @@ def plotar_comparativo(experimentos: list[dict], output_dir: str):
             rounds, accuracies,
             color=color, marker=marker, label=exp["label"],
         )
+
+    ax_acc.set_xlabel("Rodada")
+    ax_acc.set_ylabel("Acuracia Global")
+    ax_acc.set_title("Comparacao de Acuracia")
+    ax_acc.legend(fontsize=9, loc="best")
+    ax_acc.set_ylim(bottom=0)
+
+    fig_acc.tight_layout()
+    out_acc = os.path.join(output_dir, "comparativo_acuracia.png")
+    fig_acc.savefig(out_acc, dpi=200, bbox_inches="tight")
+    print(f"Grafico de Acuracia salvo em: {out_acc}")
+
+    # === GRAFICO DE LOSS ===
+    fig_loss, ax_loss = plt.subplots(figsize=(10, 6))
+
+    for i, exp in enumerate(experimentos):
+        rounds = [r["round"] for r in exp["rounds"]]
+        losses = [r["loss"] for r in exp["rounds"]]
+
+        color = COLORS[i % len(COLORS)]
+        marker = MARKERS[i % len(MARKERS)]
+
         ax_loss.plot(
             rounds, losses,
             color=color, marker=marker, label=exp["label"],
         )
 
-    # Acuracia
-    ax_acc.set_xlabel("Rodada")
-    ax_acc.set_ylabel("Acuracia Global")
-    ax_acc.set_title("Acuracia por Rodada")
-    ax_acc.legend(fontsize=9, loc="best")
-    ax_acc.set_ylim(bottom=0)
-
-    # Loss
     ax_loss.set_xlabel("Rodada")
     ax_loss.set_ylabel("Perda (Loss)")
-    ax_loss.set_title("Perda por Rodada")
+    ax_loss.set_title("Comparacao de Perda (Loss)")
     ax_loss.legend(fontsize=9, loc="best")
 
-    plt.tight_layout()
+    fig_loss.tight_layout()
+    out_loss = os.path.join(output_dir, "comparativo_loss.png")
+    fig_loss.savefig(out_loss, dpi=200, bbox_inches="tight")
+    print(f"Grafico de Loss salvo em:     {out_loss}")
 
-    output_file = os.path.join(output_dir, "comparativo_cenarios.png")
-    fig.savefig(output_file, dpi=200, bbox_inches="tight")
-    print(f"Grafico salvo em: {output_file}")
     plt.show()
 
 

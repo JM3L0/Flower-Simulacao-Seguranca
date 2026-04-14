@@ -6,31 +6,31 @@
     "dirichlet_alpha": 0.3,
     "learning_rate": 0.1,
     "fraction_evaluate": 0.5,
-    "timestamp": "2026-04-14T12:55:41.729906"
+    "timestamp": "2026-04-14T13:10:14.515017"
   },
   "rounds": [
     {
       "round": 0,
-      "accuracy": 0.1002,
-      "loss": 2.3044676871239385
+      "accuracy": 0.1001,
+      "loss": 2.305012838749946
     },
     {
       "round": 1,
       "accuracy": 0.1,
-      "loss": 2.3049508378475525
+      "loss": 2.304486036300659
     },
     {
       "round": 2,
-      "accuracy": 0.1,
-      "loss": 2.2931776016573364
+      "accuracy": 0.0998,
+      "loss": 2.302224394641345
     },
     {
       "round": 3,
-      "accuracy": 0.1656,
-      "loss": 2.254155741462225
+      "accuracy": 0.1205,
+      "loss": 2.280747962903373
     }
   ],
-  "final_accuracy": 0.1656,
-  "final_loss": 2.254155741462225,
+  "final_accuracy": 0.1205,
+  "final_loss": 2.280747962903373,
   "total_rounds_completed": 4
 }

@@ -1,0 +1,16 @@
+{
+  "round": 5,
+  "config": {
+    "strategy": "FedAvg",
+    "num_server_rounds": 5,
+    "poison_rate": 0.2,
+    "dirichlet_alpha": 1.0,
+    "learning_rate": 0.1,
+    "fraction_evaluate": 0.5,
+    "timestamp": "2026-04-14T10:58:04.349332"
+  },
+  "metrics": {
+    "accuracy": 0.2359,
+    "loss": 2.0637443744683566
+  }
+}

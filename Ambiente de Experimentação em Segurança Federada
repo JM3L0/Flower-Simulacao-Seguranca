@@ -1,0 +1,73 @@
+# Walkthrough — Ambiente de Experimentação em Segurança Federada
+
+## Resumo das Alterações
+
+4 arquivos foram modificados para transformar o projeto em um ambiente de pesquisa em cibersegurança para Aprendizado Federado.
+
+---
+
+## 1. Arquitetura
+
+```mermaid
+graph TD
+    A["pyproject.toml<br/>poison_rate, dirichlet_alpha"] --> B["client_app.py<br/>Lê config dinâmica"]
+    A --> C["server_app.py<br/>FedAvg + JSON Export"]
+    B --> D["task.py<br/>DirichletPartitioner<br/>+ train_with_attack"]
+    D --> B
+    C --> E["metrics_json/<br/>metrics_round_X.json<br/>metrics_summary.json"]
+```
+
+---
+
+## 2. Alterações por Arquivo
+
+### [pyproject.toml](file:///c:/Users/jsous/OneDrive/Área de Trabalho/Flower-teste/quickstart-pytorch/pyproject.toml)
+render_diffs(file:///c:/Users/jsous/OneDrive/Área de Trabalho/Flower-teste/quickstart-pytorch/pyproject.toml)
+
+### [task.py](file:///c:/Users/jsous/OneDrive/Área de Trabalho/Flower-teste/quickstart-pytorch/pytorchexample/task.py)
+- `IidPartitioner` → `DirichletPartitioner` com `partition_by="label"` e `alpha` dinâmico
+- Nova função `train_with_attack()` com label flipping e comentários estruturados para ataques alternativos (FedDebug, FLANDERS)
+- Função `train()` original preservada como baseline
+
+### [client_app.py](file:///c:/Users/jsous/OneDrive/Área de Trabalho/Flower-teste/quickstart-pytorch/pytorchexample/client_app.py)
+- Leitura dinâmica de `poison_rate` e `dirichlet_alpha` via `context.run_config`
+- Chama `train_with_attack` em vez de `train`
+- Reporta métricas de envenenamento: `is_poisoned`, `num_poisoned_samples`
+
+### [server_app.py](file:///c:/Users/jsous/OneDrive/Área de Trabalho/Flower-teste/quickstart-pytorch/pytorchexample/server_app.py)
+- Estratégia: `MultiKrum` → `FedAvg` (baseline)
+- Removido `pandas`; exportação via `json.dump` nativo
+- JSON por rodada (`metrics_round_X.json`) + summary final (`metrics_summary.json`)
+- Banner informativo no início da simulação
+
+---
+
+## 3. Uso
+
+### Execução padrão (com valores do pyproject.toml)
+```bash
+flwr run .
+```
+
+### Variação dinâmica via terminal
+```bash
+# Cenário: alta heterogeneidade + ataque moderado
+flwr run . --run-config "poison_rate=0.3 dirichlet_alpha=0.1 num-server-rounds=10"
+
+# Cenário: sem ataque (baseline limpo)
+flwr run . --run-config "poison_rate=0.0 dirichlet_alpha=1.0"
+
+# Cenário: ataque severo em dados quase IID
+flwr run . --run-config "poison_rate=0.5 dirichlet_alpha=100.0"
+```
+
+### Saída JSON esperada
+```
+metrics_json/
+├── metrics_round_1.json
+├── metrics_round_2.json
+├── metrics_round_3.json
+├── metrics_round_4.json
+├── metrics_round_5.json
+└── metrics_summary.json
+```

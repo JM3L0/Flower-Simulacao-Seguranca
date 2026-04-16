@@ -440,6 +440,56 @@ $env:PYTHONIOENCODING="utf-8"; flwr run . --stream --run-config "defense_mode='K
 
 ---
 
+## 15. Configuração de Infraestrutura — O Controle dos Clientes (`--federation-config`)
+
+Os 9 parâmetros acima (seção 14) controlam **o que acontece** dentro da simulação (ataques, defesas, hiperparâmetros). Porém, existe uma segunda camada de configuração que controla **a infraestrutura** da simulação em si: quantos clientes virtuais existem, quantos CPUs cada um recebe, etc.
+
+Esses parâmetros vivem numa flag **separada** chamada `--federation-config` e **não entram** dentro do `--run-config`.
+
+### 15.1 Número de Clientes Simulados (`num-supernodes`)
+
+Por padrão, o Flower cria **10 clientes virtuais** (SuperNodes). Cada SuperNode representa um dispositivo participante na federação (um hospital, celular, sensor IoT, etc.).
+
+**Para alterar permanentemente (vale para todas as simulações futuras):**
+```powershell
+flwr federation simulation-config --num-supernodes 20
+```
+Isso muda o padrão global de 10 para 20 clientes. Todo `flwr run .` posterior usará 20.
+
+**Para alterar apenas numa execução específica (sem mudar o padrão):**
+```powershell
+$env:PYTHONIOENCODING="utf-8"; flwr run . --stream --federation-config "options.num-supernodes=20" --run-config "defense_mode='Krum' attack_type='label_flipping' poison_rate=0.4"
+```
+
+> **Impacto na segurança:** Mais clientes = mais votos honestos na agregação. Com 20 clientes e 1 atacante, defesas como Bulyan e Krum têm muito mais margem para isolar o invasor. Com apenas 5 clientes e 1 atacante (20% malicioso), as defesas podem vacilar.
+
+### 15.2 Recursos por Cliente (CPU e GPU)
+
+Você também pode controlar quantos CPUs e GPUs cada cliente virtual recebe. Isso afeta o **paralelismo**: se sua máquina tem 12 CPUs e você aloca 4 por cliente, o Flower rodará no máximo 3 clientes simultaneamente.
+
+**Configuração permanente:**
+```powershell
+flwr federation simulation-config --num-supernodes 20 --client-resources-num-cpus 4 --client-resources-num-gpus 0.5
+```
+
+**Configuração pontual (uma execução):**
+```powershell
+$env:PYTHONIOENCODING="utf-8"; flwr run . --stream --federation-config "options.num-supernodes=20,options.backend.client-resources.num-cpus=4,options.backend.client-resources.num-gpus=0.5" --run-config "defense_mode='Bulyan'"
+```
+
+### 15.3 Resumo das Duas Camadas de Configuração
+
+| O que você quer controlar | Flag do terminal | Exemplos |
+|---|---|---|
+| Ataques, defesas, épocas, learning rate, poison rate, alpha... | `--run-config` | `defense_mode='Krum'`, `poison_rate=0.4` |
+| Número de clientes simulados | `--federation-config` | `options.num-supernodes=20` |
+| CPUs alocados por cliente | `--federation-config` | `options.backend.client-resources.num-cpus=4` |
+| GPU alocada por cliente (fração) | `--federation-config` | `options.backend.client-resources.num-gpus=0.5` |
+
+> **Regra prática:** O `--run-config` controla a **ciência** (o experimento). O `--federation-config` controla a **engenharia** (a máquina).
+
+---
+
 # Parte VI — Resultados e Visualização
 
 ---

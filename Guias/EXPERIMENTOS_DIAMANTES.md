@@ -25,7 +25,14 @@ foreach ($defesa in $defesas) {
     foreach ($taxa in $taxas) {
         Write-Host "Iniciando Teste => Defesa: $defesa | Intensidade: $taxa" -ForegroundColor Cyan
         $env:PYTHONIOENCODING="utf-8"
-        flwr run . --run-config "defense_mode='$defesa' attack_type='gaussian_noise' poison_rate=$taxa num-server-rounds=4"
+        flwr run . --stream --run-config "defense_mode='$defesa' attack_type='gaussian_noise' poison_rate=$taxa num-server-rounds=4"
+
+        # === ANTI-TRAVAMENTO (Obrigatório no Windows) ===
+        # --stream garante que o flwr run só retorna DEPOIS da simulação terminar (JSONs salvos).
+        # ray stop encerra os workers Ray. NÃO usar Stop-Process python (mata I/O e perde arquivos).
+        Write-Host "Simulacao concluida. Limpando processos Ray..." -ForegroundColor Yellow
+        ray stop 2>$null
+        Start-Sleep -Seconds 8
     }
 }
 ```
@@ -112,46 +119,61 @@ O Windows PowerShell e o Linux do Google Colab possuem diferenças sintáticas c
 Crie uma célula de código Python e cole:
 ```python
 import os
+import time
 
 taxas = [0.1, 0.3, 0.5, 0.7, 0.9]
 defesas = ["FedAvg", "FedMedian", "Bulyan"]
 
 print("Limpando bancada...")
-os.system("rm -f metrics_json/*.json") # Usa rm no lugar do Remove-Item
+os.system("rm -f metrics_json/*.json")
 
 for defesa in defesas:
     for taxa in taxas:
-        print(f"==== Iniciando Teste => Defesa: {defesa} | Intensidade: {taxa} ====")
+        print(f"\n==== Iniciando Teste => Defesa: {defesa} | Intensidade: {taxa} ====")
         
-        # Aspas invertidas para o terminal Linux:
-        comando = f"flwr run . --run-config 'defense_mode=\"{defesa}\" attack_type=\"gaussian_noise\" poison_rate={taxa} num-server-rounds=4'"
-        
+        # --stream é OBRIGATÓRIO: garante que o flwr run bloqueia até o fim (JSONs salvos).
+        comando = f"flwr run . --stream --run-config 'defense_mode=\"{defesa}\" attack_type=\"gaussian_noise\" poison_rate={taxa} num-server-rounds=4'"
         os.system(comando)
 
-print("Renderizando gráfico...")
+        # === ANTI-TRAVAMENTO: Limpeza de processos Ray ===
+        # NÃO usar pkill (pode matar processos durante I/O e perder JSONs).
+        print("Simulação concluída. Limpando processos Ray...")
+        os.system("ray stop 2>/dev/null")
+        time.sleep(8)
+
+print("\n==== Bateria completa! Renderizando gráfico... ====")
 os.system("python plotar_curva_risco.py")
 ```
 
 ### Mestre 2 adaptado para Colab (Células Bash Independentes)
-Num Notebook, os comandos isolados devem começar com `!`:
+Num Notebook, os comandos isolados devem começar com `!`. Após cada simulação, rode a célula de limpeza.
 
-**Célula 1:**
+**Célula 1 — Limpeza da Bancada:**
 ```bash
 !rm -f metrics_json/*.json
 ```
-**Célula 2:**
+**Célula 2 — Baseline Pacífico:**
 ```bash
 !flwr run . --stream --run-config 'defense_mode="FedAvg" poison_rate=0.0 num-server-rounds=20'
 ```
-**Célula 3:**
+**Célula 3 — Limpeza entre simulações:**
+```bash
+!ray stop 2>/dev/null; sleep 8; echo "Limpo."
+```
+**Célula 4 — Ataque Ditatorial sem Defesa:**
 ```bash
 !flwr run . --stream --run-config 'defense_mode="FedAvg" attack_type="model_replacement" poison_rate=1.0 num-server-rounds=20'
 ```
-**Célula 4:**
+**Célula 5 — Limpeza entre simulações:**
+```bash
+!ray stop 2>/dev/null; pkill -f 'flwr' 2>/dev/null; pkill -f 'ray' 2>/dev/null; sleep 5; echo "Limpo."
+```
+**Célula 6 — Resistência FedMedian:**
 ```bash
 !flwr run . --stream --run-config 'defense_mode="FedMedian" attack_type="model_replacement" poison_rate=1.0 num-server-rounds=20'
 ```
-**Célula 5:**
+**Célula 7 — Limpeza final + Renderização:**
 ```bash
+!ray stop 2>/dev/null; sleep 5
 !python plotar_resultados.py
 ```

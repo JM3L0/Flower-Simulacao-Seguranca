@@ -133,6 +133,38 @@ def plotar_comparativo(experimentos: list[dict], output_dir: str):
     fig_loss.savefig(out_loss, dpi=200, bbox_inches="tight")
     print(f"Grafico de Loss salvo em:     {out_loss}")
 
+    # === GRAFICO DE TEMPO POR RODADA (MRT) ===
+    has_time = any(
+        "round_time_s" in r for exp in experimentos for r in exp["rounds"]
+    )
+    if has_time:
+        fig_time, ax_time = plt.subplots(figsize=(10, 6))
+
+        for i, exp in enumerate(experimentos):
+            rounds = [r["round"] for r in exp["rounds"]]
+            times = [r.get("round_time_s") for r in exp["rounds"]]
+
+            if all(t is None for t in times):
+                continue
+
+            color = COLORS[i % len(COLORS)]
+            marker = MARKERS[i % len(MARKERS)]
+
+            ax_time.plot(
+                rounds, times,
+                color=color, marker=marker, label=exp["label"],
+            )
+
+        ax_time.set_xlabel("Rodada")
+        ax_time.set_ylabel("Tempo por rodada (s)")
+        ax_time.set_title("Comparacao de MRT por Rodada")
+        ax_time.legend(fontsize=9, loc="best")
+
+        fig_time.tight_layout()
+        out_time = os.path.join(output_dir, "comparativo_mrt.png")
+        fig_time.savefig(out_time, dpi=200, bbox_inches="tight")
+        print(f"Grafico de MRT salvo em:      {out_time}")
+
     plt.show()
 
 

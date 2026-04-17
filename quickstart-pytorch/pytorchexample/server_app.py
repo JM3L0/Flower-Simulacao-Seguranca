@@ -2,6 +2,7 @@
 
 import json
 import os
+import time
 from datetime import datetime
 
 import torch
@@ -83,13 +84,25 @@ def main(grid: Grid, context: Context) -> None:
         strategy = FedAvg(fraction_evaluate=fraction_evaluate)
         modo_defesa = "FedAvg"
 
+    # Track round timing (MRT)
+    round_timings: dict[int, float] = {}
+    prev_round_end = time.perf_counter()
+
+    def evaluate_with_timing(server_round: int, arrays: ArrayRecord) -> MetricRecord:
+        nonlocal prev_round_end
+        metrics = global_evaluate(server_round, arrays)
+        now = time.perf_counter()
+        round_timings[server_round] = now - prev_round_end
+        prev_round_end = now
+        return metrics
+
     # Start strategy for `num_rounds`
     result = strategy.start(
         grid=grid,
         initial_arrays=arrays,
         train_config=ConfigRecord({"lr": lr}),
         num_rounds=num_rounds,
-        evaluate_fn=global_evaluate,
+        evaluate_fn=evaluate_with_timing,
     )
 
     # =========================================================================
@@ -112,10 +125,17 @@ def main(grid: Grid, context: Context) -> None:
             "round": round_num,
             "accuracy": metrics.get("accuracy", None),
             "loss": metrics.get("loss", None),
+            "round_time_s": round_timings.get(round_num, None),
         })
 
     final_round = max(result.evaluate_metrics_serverapp.keys()) if result.evaluate_metrics_serverapp else 0
     final_metrics = result.evaluate_metrics_serverapp.get(final_round, {})
+
+    mrt_s = (
+        sum(round_timings.values()) / len(round_timings)
+        if round_timings
+        else None
+    )
 
     summary = {
         "experiment_config": experiment_config,
@@ -123,6 +143,7 @@ def main(grid: Grid, context: Context) -> None:
         "final_accuracy": final_metrics.get("accuracy", None),
         "final_loss": final_metrics.get("loss", None),
         "total_rounds_completed": len(all_rounds_data),
+        "mrt_s": mrt_s,
     }
 
     # Nome único baseado na configuração do cenário
@@ -139,6 +160,7 @@ def main(grid: Grid, context: Context) -> None:
     print(f"  Estratégia:      {modo_defesa}")
     print(f"  Acurácia Final:  {summary['final_accuracy']}")
     print(f"  Perda Final:     {summary['final_loss']}")
+    print(f"  MRT (s):         {summary['mrt_s']}")
     print(f"  Métricas salvas: {summary_file}")
     print("=" * 70)
 

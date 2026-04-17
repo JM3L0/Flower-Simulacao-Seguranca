@@ -24,9 +24,9 @@ OUTPUT_DIR = os.path.join(SCRIPT_DIR, "graficos")
 
 # Estilo academico
 plt.rcParams.update({
-    "figure.figsize": (12, 5),
+    "figure.figsize": (16, 8),
     "font.family": "serif",
-    "font.size": 12,
+    "font.size": 11,
     "axes.grid": True,
     "grid.alpha": 0.3,
     "lines.linewidth": 2,
@@ -83,7 +83,7 @@ def plotar_comparativo(experimentos: list[dict], output_dir: str):
     os.makedirs(output_dir, exist_ok=True)
 
     # === GRAFICO DE ACURACIA ===
-    fig_acc, ax_acc = plt.subplots(figsize=(10, 6))
+    fig_acc, ax_acc = plt.subplots(figsize=(14, 7))
 
     for i, exp in enumerate(experimentos):
         rounds = [r["round"] for r in exp["rounds"]]
@@ -97,10 +97,10 @@ def plotar_comparativo(experimentos: list[dict], output_dir: str):
             color=color, marker=marker, label=exp["label"],
         )
 
-    ax_acc.set_xlabel("Rodada")
-    ax_acc.set_ylabel("Acuracia Global")
-    ax_acc.set_title("Comparacao de Acuracia")
-    ax_acc.legend(fontsize=9, loc="best")
+    ax_acc.set_xlabel("Rodada", fontsize=12)
+    ax_acc.set_ylabel("Acuracia Global", fontsize=12)
+    ax_acc.set_title("Comparacao de Acuracia", fontsize=14, fontweight="bold")
+    ax_acc.legend(fontsize=9, loc="center left", bbox_to_anchor=(1, 0.5), ncol=1)
     ax_acc.set_ylim(bottom=0)
 
     fig_acc.tight_layout()
@@ -109,7 +109,7 @@ def plotar_comparativo(experimentos: list[dict], output_dir: str):
     print(f"Grafico de Acuracia salvo em: {out_acc}")
 
     # === GRAFICO DE LOSS ===
-    fig_loss, ax_loss = plt.subplots(figsize=(10, 6))
+    fig_loss, ax_loss = plt.subplots(figsize=(14, 7))
 
     for i, exp in enumerate(experimentos):
         rounds = [r["round"] for r in exp["rounds"]]
@@ -123,10 +123,10 @@ def plotar_comparativo(experimentos: list[dict], output_dir: str):
             color=color, marker=marker, label=exp["label"],
         )
 
-    ax_loss.set_xlabel("Rodada")
-    ax_loss.set_ylabel("Perda (Loss)")
-    ax_loss.set_title("Comparacao de Perda (Loss)")
-    ax_loss.legend(fontsize=9, loc="best")
+    ax_loss.set_xlabel("Rodada", fontsize=12)
+    ax_loss.set_ylabel("Perda (Loss)", fontsize=12)
+    ax_loss.set_title("Comparacao de Perda (Loss)", fontsize=14, fontweight="bold")
+    ax_loss.legend(fontsize=9, loc="center left", bbox_to_anchor=(1, 0.5), ncol=1)
 
     fig_loss.tight_layout()
     out_loss = os.path.join(output_dir, "comparativo_loss.png")
@@ -138,7 +138,7 @@ def plotar_comparativo(experimentos: list[dict], output_dir: str):
         "round_time_s" in r for exp in experimentos for r in exp["rounds"]
     )
     if has_time:
-        fig_time, ax_time = plt.subplots(figsize=(10, 6))
+        fig_time, ax_time = plt.subplots(figsize=(14, 7))
 
         for i, exp in enumerate(experimentos):
             rounds = [r["round"] for r in exp["rounds"]]
@@ -155,10 +155,10 @@ def plotar_comparativo(experimentos: list[dict], output_dir: str):
                 color=color, marker=marker, label=exp["label"],
             )
 
-        ax_time.set_xlabel("Rodada")
-        ax_time.set_ylabel("Tempo por rodada (s)")
-        ax_time.set_title("Comparacao de MRT por Rodada")
-        ax_time.legend(fontsize=9, loc="best")
+        ax_time.set_xlabel("Rodada", fontsize=12)
+        ax_time.set_ylabel("Tempo por rodada (s)", fontsize=12)
+        ax_time.set_title("Comparacao de MRT por Rodada", fontsize=14, fontweight="bold")
+        ax_time.legend(fontsize=9, loc="center left", bbox_to_anchor=(1, 0.5), ncol=1)
 
         fig_time.tight_layout()
         out_time = os.path.join(output_dir, "comparativo_mrt.png")

@@ -1,0 +1,48 @@
+{
+  "experiment_config": {
+    "strategy": "FedMedian",
+    "attack_type": "gaussian_noise",
+    "num_server_rounds": 4,
+    "poison_rate": 0.1,
+    "dirichlet_alpha": 1.0,
+    "learning_rate": 0.1,
+    "fraction_evaluate": 0.5,
+    "timestamp": "2026-04-16T21:23:22.356658"
+  },
+  "rounds": [
+    {
+      "round": 0,
+      "accuracy": 0.0981,
+      "loss": 2.3033129987837393,
+      "round_time_s": 15.257045399999697
+    },
+    {
+      "round": 1,
+      "accuracy": 0.1001,
+      "loss": 2.319329325156876,
+      "round_time_s": 38.27389360000052
+    },
+    {
+      "round": 2,
+      "accuracy": 0.1215,
+      "loss": 2.285455241987977,
+      "round_time_s": 10.287658499999452
+    },
+    {
+      "round": 3,
+      "accuracy": 0.1209,
+      "loss": 2.324790942518017,
+      "round_time_s": 10.658724299999449
+    },
+    {
+      "round": 4,
+      "accuracy": 0.1421,
+      "loss": 2.280010519148428,
+      "round_time_s": 10.996198599999843
+    }
+  ],
+  "final_accuracy": 0.1421,
+  "final_loss": 2.280010519148428,
+  "total_rounds_completed": 5,
+  "mrt_s": 17.094704079999794
+}

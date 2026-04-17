@@ -1,0 +1,48 @@
+{
+  "experiment_config": {
+    "strategy": "Bulyan",
+    "attack_type": "gaussian_noise",
+    "num_server_rounds": 4,
+    "poison_rate": 0.1,
+    "dirichlet_alpha": 100.0,
+    "learning_rate": 0.1,
+    "fraction_evaluate": 0.5,
+    "timestamp": "2026-04-17T08:48:11.439334"
+  },
+  "rounds": [
+    {
+      "round": 0,
+      "accuracy": 0.0987,
+      "loss": 2.3047460483599314,
+      "round_time_s": 14.07200620000367
+    },
+    {
+      "round": 1,
+      "accuracy": 0.0988,
+      "loss": 2.3306111444400837,
+      "round_time_s": 45.714314800003194
+    },
+    {
+      "round": 2,
+      "accuracy": 0.1414,
+      "loss": 2.2622703389276433,
+      "round_time_s": 17.365156599997135
+    },
+    {
+      "round": 3,
+      "accuracy": 0.1286,
+      "loss": 2.2837879416308824,
+      "round_time_s": 17.98598320000019
+    },
+    {
+      "round": 4,
+      "accuracy": 0.1686,
+      "loss": 2.1793694194359117,
+      "round_time_s": 17.500096999996458
+    }
+  ],
+  "final_accuracy": 0.1686,
+  "final_loss": 2.1793694194359117,
+  "total_rounds_completed": 5,
+  "mrt_s": 22.52751156000013
+}

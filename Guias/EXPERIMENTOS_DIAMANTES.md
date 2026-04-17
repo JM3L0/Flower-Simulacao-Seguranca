@@ -9,7 +9,7 @@ Este roteiro contém os dois testes definitivos para gerar gráficos de análise
 ## MESTRE 1: A Curva de Colapso das Defesas (Gráfico MTTA-Style)
 
 ### Objetivo
-Testar o ponto de quebra exato das defesas quando a infiltração de ataque sobe progressivamente de 10% a 90%. Eixo X: Intensidade do Ataque. Eixo Y: Acurácia Global.
+Testar o ponto de quebra exato das defesas quando a infiltração de ataque sobe progressivamente de 10% a D90%. Eixo X: Intensidade do Ataque. Eixo Y: Acurácia Global.
 
 ### 1. Limpeza da Bancada
 ```powershell

@@ -4,45 +4,45 @@
     "attack_type": "gaussian_noise",
     "num_server_rounds": 4,
     "poison_rate": 0.5,
-    "dirichlet_alpha": 1.0,
+    "dirichlet_alpha": 100.0,
     "learning_rate": 0.1,
     "fraction_evaluate": 0.5,
-    "timestamp": "2026-04-16T21:26:54.802098"
+    "timestamp": "2026-04-17T09:23:41.418820"
   },
   "rounds": [
     {
       "round": 0,
       "accuracy": 0.1,
-      "loss": 2.303685408604296,
-      "round_time_s": 14.770382699998663
+      "loss": 2.304703000225598,
+      "round_time_s": 11.165688599998248
     },
     {
       "round": 1,
       "accuracy": 0.1,
-      "loss": 2.3212755722335623,
-      "round_time_s": 37.837109600000986
+      "loss": 2.305148139784608,
+      "round_time_s": 30.860792200001015
     },
     {
       "round": 2,
       "accuracy": 0.1,
-      "loss": 2.325272976597653,
-      "round_time_s": 10.699593600000298
+      "loss": 2.3030679889872103,
+      "round_time_s": 10.064948499995808
     },
     {
       "round": 3,
       "accuracy": 0.1,
-      "loss": 2.314166726945322,
-      "round_time_s": 10.590063699999519
+      "loss": 2.3030356304554997,
+      "round_time_s": 10.021122700003616
     },
     {
       "round": 4,
       "accuracy": 0.1,
-      "loss": 2.321848045421552,
-      "round_time_s": 10.522569499999008
+      "loss": 2.303849558287029,
+      "round_time_s": 10.780063199999859
     }
   ],
   "final_accuracy": 0.1,
-  "final_loss": 2.321848045421552,
+  "final_loss": 2.303849558287029,
   "total_rounds_completed": 5,
-  "mrt_s": 16.883943819999693
+  "mrt_s": 14.578523039999709
 }

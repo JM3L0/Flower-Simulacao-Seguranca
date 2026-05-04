@@ -1,0 +1,84 @@
+{
+  "experiment_config": {
+    "strategy": "FedAvg",
+    "attack_type": "gaussian_noise",
+    "num_server_rounds": 10,
+    "poison_rate": 0.1,
+    "dirichlet_alpha": 1.0,
+    "learning_rate": 0.1,
+    "fraction_evaluate": 0.5,
+    "timestamp": "2026-05-04T13:04:07.753575"
+  },
+  "rounds": [
+    {
+      "round": 0,
+      "accuracy": 0.1113,
+      "loss": 2.3059886075273344,
+      "round_time_s": 13.027046000002883
+    },
+    {
+      "round": 1,
+      "accuracy": 0.1,
+      "loss": 2.3550269935704486,
+      "round_time_s": 31.373535199905746
+    },
+    {
+      "round": 2,
+      "accuracy": 0.1187,
+      "loss": 2.255382208884517,
+      "round_time_s": 9.692589799989946
+    },
+    {
+      "round": 3,
+      "accuracy": 0.1474,
+      "loss": 2.231753590740735,
+      "round_time_s": 9.582494100090116
+    },
+    {
+      "round": 4,
+      "accuracy": 0.1564,
+      "loss": 2.231206109252157,
+      "round_time_s": 9.690708799986169
+    },
+    {
+      "round": 5,
+      "accuracy": 0.1796,
+      "loss": 2.126052074794528,
+      "round_time_s": 11.136992999934591
+    },
+    {
+      "round": 6,
+      "accuracy": 0.1864,
+      "loss": 2.140362836137603,
+      "round_time_s": 9.58994860004168
+    },
+    {
+      "round": 7,
+      "accuracy": 0.2284,
+      "loss": 2.0783186139939707,
+      "round_time_s": 9.355936200008728
+    },
+    {
+      "round": 8,
+      "accuracy": 0.2035,
+      "loss": 2.1366276801386967,
+      "round_time_s": 11.261574000003748
+    },
+    {
+      "round": 9,
+      "accuracy": 0.2193,
+      "loss": 2.1113036584250535,
+      "round_time_s": 9.270228200010024
+    },
+    {
+      "round": 10,
+      "accuracy": 0.2381,
+      "loss": 2.0470757876770405,
+      "round_time_s": 12.321372999926098
+    }
+  ],
+  "final_accuracy": 0.2381,
+  "final_loss": 2.0470757876770405,
+  "total_rounds_completed": 11,
+  "mrt_s": 12.391129718172703
+}

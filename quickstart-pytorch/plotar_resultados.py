@@ -101,7 +101,7 @@ def plotar_comparativo(experimentos: list[dict], output_dir: str):
     ax_acc.set_ylabel("Acuracia Global", fontsize=12)
     ax_acc.set_title("Comparacao de Acuracia", fontsize=14, fontweight="bold")
     ax_acc.legend(fontsize=9, loc="center left", bbox_to_anchor=(1, 0.5), ncol=1)
-    ax_acc.set_ylim(bottom=0)
+    ax_acc.set_xlim(left=0)
 
     fig_acc.tight_layout()
     out_acc = os.path.join(output_dir, "comparativo_acuracia.png")
@@ -127,6 +127,7 @@ def plotar_comparativo(experimentos: list[dict], output_dir: str):
     ax_loss.set_ylabel("Perda (Loss)", fontsize=12)
     ax_loss.set_title("Comparacao de Perda (Loss)", fontsize=14, fontweight="bold")
     ax_loss.legend(fontsize=9, loc="center left", bbox_to_anchor=(1, 0.5), ncol=1)
+    ax_loss.set_xlim(left=0)
 
     fig_loss.tight_layout()
     out_loss = os.path.join(output_dir, "comparativo_loss.png")
@@ -159,6 +160,8 @@ def plotar_comparativo(experimentos: list[dict], output_dir: str):
         ax_time.set_ylabel("Tempo por rodada (s)", fontsize=12)
         ax_time.set_title("Comparacao de MRT por Rodada", fontsize=14, fontweight="bold")
         ax_time.legend(fontsize=9, loc="center left", bbox_to_anchor=(1, 0.5), ncol=1)
+        ax_time.set_ylim(bottom=0)
+        ax_time.set_xlim(left=0)
 
         fig_time.tight_layout()
         out_time = os.path.join(output_dir, "comparativo_mrt.png")

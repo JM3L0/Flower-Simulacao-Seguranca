@@ -1,0 +1,84 @@
+{
+  "experiment_config": {
+    "strategy": "Krum",
+    "attack_type": "label_flipping",
+    "num_server_rounds": 10,
+    "poison_rate": 0.5,
+    "dirichlet_alpha": 0.5,
+    "learning_rate": 0.1,
+    "fraction_evaluate": 0.5,
+    "timestamp": "2026-05-04T12:52:46.003323"
+  },
+  "rounds": [
+    {
+      "round": 0,
+      "accuracy": 0.1,
+      "loss": 2.3051997166645677,
+      "round_time_s": 13.932362199993804
+    },
+    {
+      "round": 1,
+      "accuracy": 0.1,
+      "loss": 2.3679589531089684,
+      "round_time_s": 36.73780930007342
+    },
+    {
+      "round": 2,
+      "accuracy": 0.1334,
+      "loss": 2.323583708533758,
+      "round_time_s": 10.39440879994072
+    },
+    {
+      "round": 3,
+      "accuracy": 0.1598,
+      "loss": 2.32712331602845,
+      "round_time_s": 10.301749699981883
+    },
+    {
+      "round": 4,
+      "accuracy": 0.1385,
+      "loss": 2.352191825456257,
+      "round_time_s": 10.325143199996091
+    },
+    {
+      "round": 5,
+      "accuracy": 0.1545,
+      "loss": 2.251258343080931,
+      "round_time_s": 10.352933100075461
+    },
+    {
+      "round": 6,
+      "accuracy": 0.1,
+      "loss": 2.3559560926654672,
+      "round_time_s": 10.278654200024903
+    },
+    {
+      "round": 7,
+      "accuracy": 0.1883,
+      "loss": 2.2847129423407058,
+      "round_time_s": 10.285205599968322
+    },
+    {
+      "round": 8,
+      "accuracy": 0.101,
+      "loss": 2.3340535676932035,
+      "round_time_s": 10.601839800016023
+    },
+    {
+      "round": 9,
+      "accuracy": 0.134,
+      "loss": 2.390150465542757,
+      "round_time_s": 10.129971100017428
+    },
+    {
+      "round": 10,
+      "accuracy": 0.1001,
+      "loss": 2.40391074253034,
+      "round_time_s": 11.727393499924801
+    }
+  ],
+  "final_accuracy": 0.1001,
+  "final_loss": 2.40391074253034,
+  "total_rounds_completed": 11,
+  "mrt_s": 13.187951863637533
+}

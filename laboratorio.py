@@ -208,15 +208,10 @@ def executar_lote(runs: list[dict], nome_lote: str):
     print()
     print(c(f"  Total de execuções: {total}", Cor.CYAN))
 
-    # Limpa resultados antigos se existirem
+    # Informa quantos JSONs já existem (sem apagar nada)
     jsons_anteriores = list(METRICS_DIR.glob("metrics_*.json"))
     if jsons_anteriores:
-        print(c(f"\n  [!] Existem {len(jsons_anteriores)} JSON(s) anteriores em metrics_json/.", Cor.YELLOW))
-        if confirmar("Limpar antes de começar?"):
-            for f in jsons_anteriores:
-                f.unlink()
-            list(GRAFICOS_DIR.glob("*.png")) and [f.unlink() for f in GRAFICOS_DIR.glob("*.png")]
-            print(c("  → Resultados anteriores removidos.", Cor.GRAY))
+        print(c(f"\n  ℹ  {len(jsons_anteriores)} JSON(s) já existem em metrics_json/ — serão preservados.", Cor.GRAY))
 
     if not confirmar("Iniciar execuções agora?"):
         print(c("  Cancelado.", Cor.GRAY))

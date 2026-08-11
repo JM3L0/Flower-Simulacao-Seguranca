@@ -1,238 +1,71 @@
-# 🚀 COMECE AQUI — Sua Jornada de 3 Semanas
+# 🚀 COMECE AQUI — Guia Central do Pesquisador
 
-## O QUE VOCÊ TEM?
-
-**7 Documentos Estruturados + Templates Prontos**
-
-```
-📁 Guias/
-├── 📄 00_MAPA_VISUAL_COMPLETO.md .......... (Visão geral)
-├── 📄 COMECE_AQUI.md ........................ (Você está aqui!)
-├── 📄 RESUMO_EXECUTIVO.md .................. (Quick summary)
-├── 📄 INDICE_COMPLETO.md ................... (Navegação)
-├── 📄 ANALISE_DESEMPENHO_ARTIGO.md ........ (Prático)
-├── 📄 APROFUNDAMENTO_METODOLOGIA_SPN.md .. (Teórico — 56KB!)
-└── 📄 SCRIPTS_PRONTOS_PARA_EXECUTAR.md ... (Copie & Cole)
-```
+Bem-vindo ao **Laboratório de Segurança em Aprendizado Federado**. Toda a documentação do projeto está organizada de forma modular em três áreas: **Documentação Técnica**, **Publicação Científica** e o novo **Portfólio de Ideias de Pesquisa**.
 
 ---
 
-## ⚡ HOJE (Próximas 2 horas)
+## 🗺️ Mapa de Navegação da Documentação
 
-### Opção A: Executar Testes (Recomendado)
+### 💡 Parte 0: Portfólio de Ideias de Pesquisa (`docs/ideias/`)
+
+* **[00_indice_ideias.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/ideias/00_indice_ideias.md)**: Visão geral e comparação entre os dois caminhos de publicação científica.
+* **[01_ideias_pesquisa_empirica_sem_spn.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/ideias/01_ideias_pesquisa_empirica_sem_spn.md)**: 5 propostas detalhadas de artigos empíricos/sistêmicos (Névoa Non-IID, Backdoors Furtivos, Carga Computacional Local, Free-Riders e Benchmark Fatorial).
+* **[02_ideias_modelagem_estocastica_com_spn.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/ideias/02_ideias_modelagem_estocastica_com_spn.md)**: 5 propostas detalhadas de artigos formais com **Redes de Petri Estocásticas (SPN)** (Cálculo MTTF, Performabilidade GSPN, Absorção de Backdoors, Sobrevivência IoT e Defesa Adaptativa).
+
+---
+
+### 📘 Parte 1: Documentação Técnica e Operacional (`docs/`)
+
+1. **[01_arquitetura_e_instalacao.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/01_arquitetura_e_instalacao.md)**
+   * Árvore do projeto, função de cada arquivo (`task.py`, `attacks.py`, `client_app.py`, `server_app.py`), instalação do Flower/Ray e solução de erros no Windows.
+2. **[02_catalogo_ataques_e_defesas.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/02_catalogo_ataques_e_defesas.md)**
+   * Catálogo detalhado dos **7 Ataques** (Data Poisoning, Model Poisoning, Evasão), **4 Defesas Bizantinas** (`FedAvg`, `FedMedian`, `Krum`, `Bulyan`), Privacidade Diferencial e Agregação Segura.
+3. **[03_parametros_e_manual_terminal.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/03_parametros_e_manual_terminal.md)**
+   * Guia da flag `--run-config`, herança e *fallback* para o `pyproject.toml`, regras de sintaxe e o teste de estresse dos 9 parâmetros.
+4. **[04_guia_e_receitas_de_experimentos.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/04_guia_e_receitas_de_experimentos.md)**
+   * Estrutura de métricas em JSON, script `plotar_resultados.py` e receitas completas para baterias de testes.
+
+---
+
+### 🎓 Parte 2: Publicação Científica e Artigo (`docs/artigo/`)
+
+1. **[00_indice_e_resumo_executivo.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/artigo/00_indice_e_resumo_executivo.md)**
+   * Resumo executivo da pesquisa, achados empíricos principais, tabela comparativa com a literatura e roteiro de trabalho.
+2. **[01_metodologia_spn_e_teoria.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/artigo/01_metodologia_spn_e_teoria.md)**
+   * O Triângulo da Impossibilidade, formalismo de Redes de Petri Estocásticas (SPN), Cadeias de Markov, cálculo do MTTF e casos de uso reais (Hospitalar, Mobile, IoT).
+3. **[02_analise_experimental_e_diamantes.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/artigo/02_analise_experimental_e_diamantes.md)**
+   * Desenho experimental com ANOVA, 4 cenários estratégicos e seleção de testes de alto impacto (*Experimentos Diamantes*).
+4. **[03_scripts_e_diagramas_visuais.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/artigo/03_scripts_e_diagramas_visuais.md)**
+   * Scripts PowerShell completos organizados por fases e diagramas ASCII dos fluxos de dados e arquitetura.
+5. **[99_documentacao_completa_archive.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/artigo/99_documentacao_completa_archive.md)**
+   * Arquivo compilado mestre consolidado mantido como histórico e segurança do conteúdo.
+
+---
+
+## ⚡ Teste Rápido de 5 Minutos (Quickstart)
+
+Para rodar sua primeira simulação com defesa agora mesmo:
+
 ```powershell
-# Abra PowerShell, navegue:
-cd "C:\Users\jsous\OneDrive\Área de Trabalho\Flower-teste\quickstart-pytorch"
+# 1. Navegue até a pasta executável
+cd "C:\Users\jsous\Desktop\Flower-Simulacao-Seguranca\quickstart-pytorch"
 
-# Copie do arquivo SCRIPTS_PRONTOS_PARA_EXECUTAR.md → "Script 1: TESTE RÁPIDO"
-# Cole aqui:
+# 2. Defina o encoding UTF-8
 $env:PYTHONIOENCODING="utf-8"
-Remove-Item -Path ".\metrics_json\*.json" -ErrorAction SilentlyContinue
+
+# 3. Execute o teste (Defesa Bulyan vs. Ataque Gradient Ascent)
 flwr run . --stream --run-config "defense_mode='Bulyan' attack_type='gradient_ascent' poison_rate=1.0 num-server-rounds=5"
 
-# Resultado: arquivo JSON criado em metrics_json/
-```
-
-**⏱️ Tempo: 5-10 minutos**
-
----
-
-### Opção B: Ler Fundamentação (Teórico)
-```
-Abra: APROFUNDAMENTO_METODOLOGIA_SPN.md
-
-Leia APENAS estas seções (45 minutos):
-  1.1 - Triângulo da Impossibilidade (5 min)
-  2.5 - Gradient Ascent (8 min)
-  3.1 - FedAvg (7 min)
-  3.4 - Bulyan (10 min)
-  6.1 - Trade-offs (10 min)
-```
-
-**⏱️ Tempo: 45 minutos**
-
----
-
-### Opção C: Equilibrado (Recomendado!)
-```
-1. Leia RESUMO_EXECUTIVO.md (15 min)
-2. Execute SCRIPT 1 (10 min)
-3. Leia Seção 1.1 de APROFUNDAMENTO (10 min)
-→ Resultado: Contexto + ação + teoria
-```
-
-**⏱️ Tempo: 35 minutos**
-
----
-
-## 📊 PRÓXIMOS 7 DIAS (1-2 horas por dia)
-
-### Dia 1-2: Testes Fase 1
-Execute: SCRIPTS_PRONTOS_PARA_EXECUTAR.md → "Script 2: CURVA DE COLAPSO"
-
-**⏱️ Tempo: 30 minutos + análise 15 minutos**
-
----
-
-### Dia 3: Testes Fase 2
-Execute: SCRIPTS_PRONTOS_PARA_EXECUTAR.md → "Script 3: MORTE SÚBITA"
-
-**⏱️ Tempo: 20 minutos + análise 10 minutos**
-
----
-
-### Dia 4-5: Testes Fase 3-4
-Execute: Script 4 e 5 (Névoa de Guerra + Backdoor Furtivo)
-
-**⏱️ Tempo: 65 minutos total**
-
----
-
-### Dia 6-7: Análise + Documentação
-Execute: Script 7 (Análise Estatística)
-
-**⏱️ Tempo: 2 horas**
-
----
-
-## 🎯 SUAS DECISÕES HOJE
-
-### Decisão 1: Começar com O Quê?
-
-- [ ] **Experimentação** → Script 1 (10 min)
-- [ ] **Teoria** → APROFUNDAMENTO 1.1-2.5 (45 min)
-- [ ] **Ambos** → Opção C acima (35 min)
-
-**Recomendação**: Ambos
-
----
-
-### Decisão 2: Qual Cenário Primeiro?
-
-```
-Curva de Colapso ..................... COMEÇAR AQUI (mais direto)
-       ↓
-Morte Súbita ......................... DEPOIS (mais dramático)
-       ↓
-Névoa de Guerra ...................... DEPOIS (mais complexo)
-       ↓
-Backdoor Furtivo ..................... DEPOIS (mais realista)
-       ↓
-Testes Completos ..................... EVENTUALMENTE (6-8 horas)
+# 4. Gere o gráfico comparativo
+python plotar_resultados.py
 ```
 
 ---
 
-### Decisão 3: Com Quanto Tempo Você Tem?
+## 🚨 5 Armadilhas Comuns a Evitar
 
-| Tempo | O Que Fazer |
-|-------|-----------|
-| **1 semana** | Apenas Testes + Resumo dos achados |
-| **2 semanas** | Testes + Análise SPN básica + Draft artigo |
-| **3 semanas** | Testes completos + SPN completa + Artigo final |
-| **1 mês** | Tudo acima + Revisão + Melhorias |
-
----
-
-## 💪 FORÇA: Você Já Tem Tudo
-
-✅ **Fundamentação Teórica Completa** (56KB de documentação)
-✅ **Scripts Prontos para Executar** (copie & cole)
-✅ **Templates de Artigo** (estrutura pronta)
-✅ **3 Estudos de Caso** (contexto real)
-✅ **Formalismo SPN** (diferencial científico)
-
----
-
-## 🚨 AVISO: 5 Armadilhas Comuns
-
-❌ **Não cometa:**
-
-1. Tentar entender TUDO antes de testar
-   → Comece com Script 1 em 10 minutos
-   
-2. Rodar testes sem replicate
-   → Sempre faça 3-5 replicações mínimo
-   
-3. Ignorar análise estatística
-   → Use Script 7 obrigatoriamente
-   
-4. Escrever artigo sem gráficos finais
-   → Testes SEMPRE primeiro
-   
-5. Confundir "herança de parâmetros"
-   → pyproject.toml define defaults, --run-config sobrescreve
-
----
-
-## ✨ Seu Diferencial Competitivo
-
-Quando terminar em 3 semanas:
-
-```
-- 7 ataques analisados (vs 2-3 papers típicos)
-- 4 defesas comparadas (vs 2 papers típicos)
-- 5 níveis de heterogeneidade (vs 1 papers típicos)
-- Formalismo SPN (vs nenhum papers típicos)
-- 3 casos de uso reais (vs teórico papers típicos)
-
-RESULTADO: Artigo único, pronto para top-tier venue 🏆
-```
-
----
-
-## 🎬 AÇÃO #1 — AGORA (5 minutos)
-
-**Escolha UMA opção:**
-
-### Opção A (Rápida):
-Abra PowerShell, copie Script 1 de SCRIPTS_PRONTOS_PARA_EXECUTAR.md
-
-### Opção B (Inteligente):
-Abra APROFUNDAMENTO_METODOLOGIA_SPN.md, leia seção 1.1
-
-### Opção C (Equilibrada):
-1. Leia RESUMO_EXECUTIVO.md (10 min)
-2. Execute Script 1 (5 min)
-3. Volte aqui em 30 minutos
-
-**Qual você escolhe?** ___________________________________
-
----
-
-## 📞 PRÓXIMA ETAPA
-
-Após completar Ação #1:
-
-1. **Se executou testes**: Gere gráficos com `python plotar_resultados.py`
-2. **Se leu teoria**: Releia a seção 2.5 (Gradient Ascent) agora
-3. **Se fez ambas**: Parabéns! Está no caminho certo 🚀
-
----
-
-## 📍 MAPA RÁPIDO
-
-```
-00_MAPA_VISUAL_COMPLETO.md .... Visão geral
-COMECE_AQUI.md ................ Próximas ações (aqui!)
-RESUMO_EXECUTIVO.md ........... 15 min de context
-SCRIPTS_PRONTOS_PARA_EXECUTAR. Copie & execute
-ANALISE_DESEMPENHO_ARTIGO.md .. Estrutura de testes
-APROFUNDAMENTO_METODOLOGIA.md  Fundamentação profunda
-INDICE_COMPLETO.md ............ Navegação
-```
-
----
-
-## 💡 ÚLTIMA DICA
-
-> "O melhor momento era há 3 meses.
-> O segundo melhor é AGORA."
-
-Você tem tudo. Falta apenas começar.
-
----
-
-**Boa sorte! Você vai criar um artigo incrível! 🚀**
-
-*Documentação criada em 01 de Maio de 2026*
+1. **Não tente entender toda a teoria antes de rodar os primeiros testes**: Comece com o comando de teste rápido de 5 minutos.
+2. **Esquecer de configurar UTF-8 no PowerShell**: Execute sempre `$env:PYTHONIOENCODING="utf-8"` para evitar erros de acentuação nos logs.
+3. **Rodar testes sem limpar arquivos antigos**: Execute `Remove-Item .\metrics_json\*.json` antes de iniciar uma nova bateria comparativa.
+4. **Confundir ordem de configuração**: Parâmetros passados no terminal via `--run-config` sobrescrevem os padrões do `pyproject.toml`.
+5. **Ignorar a assimetria dos dados**: Lembre-se de que `dirichlet_alpha=0.1` simula a "Névoa de Guerra" Non-IID do mundo real.

@@ -1,8 +1,8 @@
-# 💡 Guia de Apresentação da Ideia & Arquitetura (Para o Orientador)
+# Guia de Apresentação da Ideia & Arquitetura (Para o Orientador)
 
 ---
 
-## 🎯 1. A Ideia Central em Detalhes
+## 1. A Ideia Central em Detalhes
 
 ### O Problema que Queremos Mostrar
 Em **Aprendizado Federado (FL)**, múltiplos nós treinam um modelo de IA sem compartilhar dados brutos. Para verificar se o treino está funcionando, o servidor Flower calcula a **acurácia média global**.
@@ -17,7 +17,7 @@ Porém, em ataques de **Backdoor Furtivo** (`targeted_backdoor` ou `trigger_patc
 
 ---
 
-## 🏗️ 2. Esboço da Arquitetura Proposta
+## 2. Esboço da Arquitetura Proposta
 
 A simulação é construída sobre o framework **Flower + PyTorch**, dividida em 3 camadas principais:
 
@@ -54,7 +54,7 @@ A simulação é construída sobre o framework **Flower + PyTorch**, dividida em
 
 ---
 
-## ❓ 3. Por que Essa Ideia? (A Motivação)
+## 3. Por que Essa Ideia? (A Motivação)
 
 * **Relevância Prática**: Evita falhas críticas em sistemas reais (ex: veículos autônomos que passam a ignorar uma placa específica ou diagnóstico médico com viés).
 * **Lacuna na Literatura**: A maioria dos artigos avalia defesas em dados IID ou contra ataques brutos. Mostrar que o Non-IID "cega" defesas bizantinas sob ataques furtivos é uma contribuição de alto ineditismo.

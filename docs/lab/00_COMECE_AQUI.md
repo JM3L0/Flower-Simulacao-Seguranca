@@ -14,25 +14,35 @@ Bem-vindo ao **Laboratório de Segurança em Aprendizado Federado**. Toda a docu
 
 ---
 
-### 📘 Parte 1: Documentação Técnica e Operacional (`docs/`)
+### 📘 Parte 1: Documentação Técnica e Operacional (`docs/lab/`)
 
-1. **[01_arquitetura_e_instalacao.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/01_arquitetura_e_instalacao.md)**
+1. **[01_arquitetura_e_instalacao.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/lab/01_arquitetura_e_instalacao.md)**
    * Árvore do projeto, função de cada arquivo (`task.py`, `attacks.py`, `client_app.py`, `server_app.py`), instalação do Flower/Ray e solução de erros no Windows.
-2. **[02_catalogo_ataques_e_defesas.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/02_catalogo_ataques_e_defesas.md)**
+2. **[02_catalogo_ataques_e_defesas.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/lab/02_catalogo_ataques_e_defesas.md)**
    * Catálogo detalhado dos **7 Ataques** (Data Poisoning, Model Poisoning, Evasão), **4 Defesas Bizantinas** (`FedAvg`, `FedMedian`, `Krum`, `Bulyan`), Privacidade Diferencial e Agregação Segura.
-3. **[03_parametros_e_manual_terminal.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/03_parametros_e_manual_terminal.md)**
+3. **[03_parametros_e_manual_terminal.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/lab/03_parametros_e_manual_terminal.md)**
    * Guia da flag `--run-config`, herança e *fallback* para o `pyproject.toml`, regras de sintaxe e o teste de estresse dos 9 parâmetros.
-4. **[04_guia_e_receitas_de_experimentos.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/04_guia_e_receitas_de_experimentos.md)**
+4. **[04_guia_e_receitas_de_experimentos.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/lab/04_guia_e_receitas_de_experimentos.md)**
    * Estrutura de métricas em JSON, script `plotar_resultados.py` e receitas completas para baterias de testes.
 
 ---
 
-### 🎓 Parte 2: Publicação Científica e Artigo (`docs/artigo/`)
+### 🔬 Parte 2: Pesquisa em Foco — Artigo 1 & Backdoors (`docs/pesquisa/`)
+
+* **[00_indice_pesquisa_e_roteiro.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/pesquisa/00_indice_pesquisa_e_roteiro.md)**: Visão geral da pesquisa, tese comparativa (Grupo A vs. Grupo B) e pitch para o orientador.
+* **[01_fundamentacao_ataques_e_defesas_furtivas.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/pesquisa/01_fundamentacao_ataques_e_defesas_furtivas.md)**: Teoria de ataques furtivos, defesas conscientes e prova matemática da falha da distância $L_2$.
+* **[02_pesquisa_bibliografica_e_prompts.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/pesquisa/02_pesquisa_bibliografica_e_prompts.md)**: Prompt mestre para IA, strings de busca booleana e matriz de fichamento de artigos.
+* **[03_plano_experimental_e_dificuldade.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/pesquisa/03_plano_experimental_e_dificuldade.md)**: As 4 RQs, bateria de 4 testes no Flower, gráficos do artigo e esforço real.
+* **[04_pipeline_futuro_artigo2_benchmark.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/pesquisa/04_pipeline_futuro_artigo2_benchmark.md)**: Pipeline de 2 artigos, cronograma de 4 semanas e benchmark fatorial $7 \times 4 \times 3$.
+
+---
+
+### 🎓 Parte 3: Publicação Científica Geral e Teoria SPN (`docs/artigo/`)
 
 1. **[00_indice_e_resumo_executivo.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/artigo/00_indice_e_resumo_executivo.md)**
    * Resumo executivo da pesquisa, achados empíricos principais, tabela comparativa com a literatura e roteiro de trabalho.
 2. **[01_metodologia_spn_e_teoria.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/artigo/01_metodologia_spn_e_teoria.md)**
-   * O Triângulo da Impossibilidade, formalismo de Redes de Petri Estocásticas (SPN), Cadeias de Markov, cálculo do MTTF e casos de uso reais (Hospitalar, Mobile, IoT).
+   * O Triângulo da Impossibilidade, formalismo de Redes de Petri Estocásticas (SPN), Cadeias de Markov e cálculo do MTTF.
 3. **[02_analise_experimental_e_diamantes.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/artigo/02_analise_experimental_e_diamantes.md)**
    * Desenho experimental com ANOVA, 4 cenários estratégicos e seleção de testes de alto impacto (*Experimentos Diamantes*).
 4. **[03_scripts_e_diagramas_visuais.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/artigo/03_scripts_e_diagramas_visuais.md)**

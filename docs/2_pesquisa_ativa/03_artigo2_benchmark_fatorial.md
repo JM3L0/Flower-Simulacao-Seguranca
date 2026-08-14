@@ -1,6 +1,6 @@
-# 🔄 04: Pipeline de Publicação e Artigo 2 (Benchmark Fatorial)
+# 🔄 03: Pipeline de Publicação e Artigo 2 (Benchmark Fatorial)
 
-Este documento apresenta a **estratégia de longo prazo** (*Pipeline de 2 Artigos*), o cronograma de 4 semanas e o planejamento metodológico do **Artigo 2: Benchmark Fatorial Abrangente de Ataques Bizantinos e Defesas em PyTorch**.
+Este documento apresenta a **estratégia de longo prazo** (*Pipeline de 2 Artigos*), o cronograma mestre de 4 semanas e o planejamento metodológico do **Artigo 2: Benchmark Fatorial Abrangente de Ataques Bizantinos e Defesas em PyTorch**.
 
 ---
 
@@ -23,7 +23,7 @@ Este documento apresenta a **estratégia de longo prazo** (*Pipeline de 2 Artigo
 
 ## 🚀 2. Artigo 2: Benchmark Fatorial Abrangente ($7 \times 4 \times 3$)
 
-### 1. Títulos Sugeridos
+### 1. Título Sugerido
 * **Português**: *Benchmark Fatorial Abrangente de Mecanismos de Defesa Bizantina sob Ataques Heterogêneos em Aprendizado Federado*
 * **Inglês**: *A Comprehensive Factorial Benchmark of Byzantine Defense Mechanisms Under Heterogeneous Attacks in Federated Learning*
 

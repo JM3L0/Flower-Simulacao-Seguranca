@@ -1,6 +1,6 @@
 # 📚 02: Guia de Pesquisa Bibliográfica & Prompts Acadêmicos
 
-Este documento reúne o **Prompt Mestre para IA**, as **strings de busca booleana** e o **roteiro de fichamento bibliográfico** para embasar a escrita do referencial teórico comparando o Grupo A contra o Grupo B.
+Este documento reúne o **Prompt Mestre para IA**, as **strings de busca booleana** e a **matriz de fichamento bibliográfico** para embasar a escrita do referencial teórico comparando os métodos do Grupo A contra o Grupo B.
 
 ---
 
@@ -69,8 +69,6 @@ Use as combinações booleanas abaixo para buscas manuais nas bases indexadas:
 ---
 
 ## 📊 3. Matriz de Fichamento Bibliográfico (Preencher com os Resultados)
-
-Utilize a tabela abaixo para organizar os artigos fichados e estruturar a seção de **Trabalhos Relacionados (Related Work)**:
 
 | Categoria | Algoritmo / Artigo | Ano / Veículo | Ideia Principal | Como Citar no Manuscrito |
 |---|---|---|---|---|

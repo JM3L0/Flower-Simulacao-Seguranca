@@ -1,39 +1,35 @@
-# 🗺️ 00: Índice Geral da Pesquisa & Roteiro do Orientador
+# 🔬 01: Artigo 1 — Backdoors Furtivos & Auditoria por Classe no Flower
 
-Este documento é o **ponto de entrada unificado** para o planejamento acadêmico da pesquisa sobre **Ataques Furtivos e Auditoria em Aprendizado Federado (Flower + PyTorch)**.
+Este documento consolida a **tese científica**, o **roteiro para o orientador**, a **fundamentação teórica**, o **desenho experimental** e a **estimativa de esforço** para o **Artigo 1**.
 
 ---
 
-## 🎯 1. A Tese Central da Pesquisa (Artigo 1)
+## 🎯 1. Tese Central: Grupo A vs. Grupo B
 
-O foco primário do trabalho é realizar um **estudo comparativo rigoroso** entre:
-1. **Métodos de Agregação Convencionais (Grupo A)**: Métodos que **NÃO** levam em conta ataques furtivos (`FedAvg`, `FedMedian`, `Krum`, `Bulyan`). Avaliam apenas distâncias euclidianas globais ou a acurácia agregada, sofrendo com um ponto cego crítico e falhando sob assimetria Non-IID.
-2. **Métodos e Defesas Conscientes de Furtividade (Grupo B)**: Mecanismos que **LEVAM** em conta ataques furtivos (`FoolsGold`, `FLAME`, `RLR`, `DeepSight` e a nossa proposta de **Auditoria por Matriz de Confusão e Recall por Classe no Servidor**).
+A proposta do Artigo 1 é realizar um estudo comparativo rigoroso entre:
 
 ```text
 ┌──────────────────────────────────────────────────────────────────────────────────────────┐
-│                             ESTRUTURA COMPARATIVA DA PESQUISA                            │
+│                             ESTRUTURA COMPARATIVA DO ARTIGO 1                            │
 └──────────────────────────────────────────────────────────────────────────────────────────┘
                                              │
       ┌──────────────────────────────────────┴──────────────────────────────────────┐
       ▼                                                                             ▼
 [ GRUPO A: IGNORAM ATAQUES FURTIVOS ]                      [ GRUPO B: CONSIDERAM ATAQUES FURTIVOS ]
 • Algoritmos: FedAvg, FedMedian, Krum, Bulyan              • Algoritmos: FoolsGold, FLAME, RLR, DeepSight
-• Como operam: Distância euclidiana (L2)                   • Como operam: Similaridade de cosseno, taxa
-  ou média simples dos gradientes.                           dinâmica por coordenada e recall por classe.
-• O Problema: 90% de acurácia global com                   • O Resultado: Isola e neutraliza o backdoor
-  0% de acurácia na classe vítima (ponto cego).              sem degradar a tarefa principal.
+• Mecanismo: Avaliam apenas a acurácia global                e Módulo de Auditoria por Matriz de Confusão.
+  agregada ou distâncias euclidianas brutas (L2).          • Mecanismo: Avaliam similaridade de cosseno,
+• Limitação: Sofrem de ponto cego (90% acurácia              inspeção por classe e recall específico.
+  global com 0% na classe alvo) e falham sob Non-IID.      • Diferencial: Detectam e isolam o backdoor.
 ```
 
 ---
 
 ## 💬 2. Roteiro e Pitch para o Orientador
 
-Use este roteiro para explicar a ideia e a relevância científica do projeto de forma direta:
-
 > *"Professor, o foco central da nossa pesquisa é demonstrar uma vulnerabilidade crítica de monitoramento e defesa no Aprendizado Federado.*
 >
-> *Hoje, plataformas de FL monitoram o treino apenas pela **acurácia global agregada**. Em ataques de backdoor furtivos (`targeted_backdoor` ou `trigger_patch`), o invasor destrói apenas uma classe específica. O servidor reporta **90% de acurácia global**, criando uma **falsa sensação de segurança** enquanto a classe vítima foi totalmente corrompida.*
+> *Hoje, plataformas de MLOps federado monitoram o treino apenas pela **acurácia global agregada**. Em ataques de backdoor furtivos (`targeted_backdoor` ou `trigger_patch`), o invasor destrói apenas uma classe específica. O servidor reporta **90% de acurácia global**, criando uma **falsa sensação de segurança** enquanto a classe vítima foi totalmente corrompida.*
 >
 > *Além disso, quando os dados dos clientes são heterogêneos (assimetria Non-IID), as defesas Bizantinas clássicas baseadas em distância euclidiana (como o `Krum` e o `Bulyan`) falham: expulsam clientes honestos especializados (falsos positivos) e deixam passar o atacante furtivo.*
 >
@@ -71,14 +67,59 @@ Use este roteiro para explicar a ideia e a relevância científica do projeto de
 
 ---
 
-## 🗂️ 4. Mapa dos Documentos Desta Pasta (`docs/pesquisa/`)
+## 📖 4. Fundamentação Teórica dos Ataques e Defesas
 
-Os documentos estão organizados na sequência ideal de estudo e execução:
+### 4.1. Taxonomia de Ataques Furtivos
+1. **Targeted Backdoor**: O invasor troca secretamente o rótulo da classe de interesse ($y_{source} \rightarrow y_{target}$) nos seus dados locais. A IA atinge ~90% de acurácia global, mas o recall na classe alvo vai a zero.
+2. **Trigger Patch**: Injeta uma máscara de pixels $\Delta$ associada à classe alvo. Imagens limpas são classificadas normalmente; imagens com a marca ativam o erro induzido.
+3. **Distributed Backdoor (DBA)**: Vários clientes colaborativos injetam partes fragmentadas do gatilho para parecerem clientes limpos individualmente.
+4. **Constrained Model Replacement**: O invasor amplifica seu gradiente com restrição de norma $\lambda \|w - w_{global}\|_2^2$ para não ser cortado por filtros de norma.
 
-| Arquivo | Título | Objetivo |
-|---|---|---|
-| **[00_indice_pesquisa_e_roteiro.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/pesquisa/00_indice_pesquisa_e_roteiro.md)** | **Índice & Roteiro** *(Este arquivo)* | Visão executiva, tese comparativa e pitch para o orientador. |
-| **[01_fundamentacao_ataques_e_defesas_furtivas.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/pesquisa/01_fundamentacao_ataques_e_defesas_furtivas.md)** | **Fundamentação Teórica** | Taxonomia dos ataques furtivos, defesas existentes e por que a distância euclidiana falha. |
-| **[02_pesquisa_bibliografica_e_prompts.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/pesquisa/02_pesquisa_bibliografica_e_prompts.md)** | **Levantamento Bibliográfico** | Prompt mestre para IA, strings booleanas para Google Scholar e matriz de fichamento. |
-| **[03_plano_experimental_e_dificuldade.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/pesquisa/03_plano_experimental_e_dificuldade.md)** | **Execução & Experimentos** | As 4 RQs, bateria dos 4 experimentos, métricas, gráficos e análise de esforço real. |
-| **[04_pipeline_futuro_artigo2_benchmark.md](file:///c:/Users/jsous/Desktop/Flower-Simulacao-Seguranca/docs/pesquisa/04_pipeline_futuro_artigo2_benchmark.md)** | **Pipeline & Artigo 2** | Cronograma de 4 semanas e planejamento do Artigo 2 (Benchmark Fatorial $7 \times 4 \times 3$). |
+### 4.2. Por que a Distância Euclidiana ($L_2$) Falha sob Non-IID?
+Defesas clássicas (Krum, Bulyan) calculam $d(u, v) = \|u - v\|_2 = \sqrt{\sum (u_i - v_i)^2}$.
+* Em ataques brutos, todas as dimensões mudam $\rightarrow$ Detectado.
+* Em ataques furtivos, apenas dimensões da classe vítima mudam sutilmente $\rightarrow$ A distância global $L_2$ permanece dentro dos limites normais.
+* Sob dados Non-IID ($\alpha = 0.1$), clientes honestos legítimos têm gradientes muito mais distantes entre si do que a perturbação do atacante furtivo, gerando descarte indevido de dados legítimos (*falsos positivos*).
+
+---
+
+## 🧪 5. Perguntas de Investigação (RQs) e Bateria de Testes
+
+### Perguntas de Investigação:
+* **RQ1**: Qual a magnitude do ponto cego das métricas globais sob taxas crescentes de backdoor?
+* **RQ2**: Por que defesas geométricas (`Krum`, `Bulyan`) falham sob assimetria Non-IID ($\alpha = 0.1$)?
+* **RQ3**: Qual o impacto de épocas locais (`local-epochs=1` vs `5`) na fixação do backdoor?
+* **RQ4**: Como a auditoria por matriz de confusão identifica o ataque logo na 1ª rodada?
+
+### Bateria dos 4 Experimentos Enxutos:
+```powershell
+$env:PYTHONIOENCODING="utf-8"
+
+# 1. Baseline e Prova da Falsa Segurança (FedAvg com Targeted Backdoor)
+flwr run . --stream --run-config "defense_mode='FedAvg' attack_type='targeted_backdoor' poison_rate=0.4 local-epochs=1 num-server-rounds=10"
+
+# 2. Falha das Defesas Convencionais em Non-IID (Krum e Bulyan sob alpha=0.1)
+flwr run . --stream --run-config "defense_mode='Krum' attack_type='targeted_backdoor' poison_rate=0.4 dirichlet_alpha=0.1 num-server-rounds=10"
+flwr run . --stream --run-config "defense_mode='Bulyan' attack_type='targeted_backdoor' poison_rate=0.4 dirichlet_alpha=0.1 num-server-rounds=10"
+
+# 3. Ataque por Padrão de Gatilho Físico (Trigger Patch no Bulyan)
+flwr run . --stream --run-config "defense_mode='Bulyan' attack_type='trigger_patch' poison_rate=0.4 num-server-rounds=10"
+
+# 4. Validação da Auditoria por Classe (Matriz de Confusão no Servidor)
+```
+
+---
+
+## 📊 6. Figuras Científicas e Estimativa de Esforço
+
+### Figuras do Manuscrito:
+1. **Figura 1 (Curva Temporal de Divergência)**: Linha da Acurácia Global (~90%) sobreposta à linha da Acurácia da Classe Alvo (0%).
+2. **Figura 2 (Heatmap da Matriz de Confusão)**: Matriz 10x10 mostrando o desvio de predições da Classe Vítima.
+3. **Figura 3 (Comparativo de ASR)**: Gráfico de barras da Taxa de Sucesso do Ataque entre os métodos.
+
+### Quadro de Esforço Real:
+* **Dificuldade Técnica**: **Baixa a Média (Nota 3 / 10)**.
+* **Repositório Atual**: **80% a 85% Concluído**.
+* **Tempo Direto do Pesquisador**: **~4 a 6 horas** (ajustes pontuais em `task.py`/`server_app.py`, coleta de gráficos e análise).
+* **Tempo de Computador**: ~3 a 4 horas de execução autônoma.
+* **Tempo para Redação**: 1 a 2 semanas.

@@ -11,19 +11,38 @@ O ambiente executável da simulação reside na pasta [`quickstart-pytorch/`](fi
 ```text
 Flower-Simulacao-Seguranca/
 │
-├── docs/                                      # Documentação unificada do pesquisador
+├── docs/                                          # 🧠 DOCUMENTAÇÃO UNIFICADA E PESQUISA
+│   ├── 00_COMECE_AQUI.md                          # Portal central e quickstart
+│   ├── 1_laboratorio/                             # Guias técnicos, comandos do terminal e catálogo
+│   │   ├── 01_guia_operacional_e_terminal.md
+│   │   └── 02_catalogo_ataques_e_defesas.md
+│   ├── 2_pesquisa_ativa/                          # Artigo 1 (Estudo Empírico) e Artigo 2 (Benchmark)
+│   │   ├── 01_artigo1_backdoors_e_auditoria.md
+│   │   ├── 02_pesquisa_bibliografica_e_prompts.md
+│   │   └── 03_artigo2_benchmark_fatorial.md
+│   └── 3_portfolio_e_teoria/                      # Portfólio das 10 ideias e modelagem SPN
+│       ├── 01_portfolio_10_ideias_pesquisa.md
+│       └── 02_modelagem_formal_spn_e_markov.md
 │
-└── quickstart-pytorch/                         # Raiz executável do Flower
-    ├── pyproject.toml                          # Configurações padrão e fallback
-    ├── plotar_resultados.py                    # Script de geração automática de gráficos PNG
-    ├── metrics_json/                           # Banco de dados de métricas em JSON
-    ├── graficos/                               # Imagens PNG geradas após a plotagem
+├── experimentos/                                  # 🗄️ Histórico de rodadas anteriores
+│
+└── quickstart-pytorch/                            # 🚀 O MOTOR EXECUTÁVEL (FLOWER + PYTORCH)
+    ├── pyproject.toml                             # Configurações do Flower
+    ├── plotar_resultados.py                       # Gerador automático das figuras do artigo
+    ├── final_model.pt                             # Último modelo treinado
     │
-    └── pytorchexample/                         # O MOTOR DA SIMULAÇÃO
-        ├── task.py                             # Modelo CNN, CIFAR-10, particionamento Dirichlet e train_with_attack()
-        ├── attacks.py                          # Biblioteca com os 7 algoritmos de ataque
-        ├── client_app.py                       # Simulação dos nós clientes (edge devices)
-        └── server_app.py                       # Servidor agregador global, estratégias Bizantinas e exportador JSON
+    ├── pytorchexample/                            # Código-fonte Python
+    │   ├── task.py                                # CNN, CIFAR-10, Dirichlet e Auditoria por Classe
+    │   ├── server_app.py                          # Agregador Flower, Defesas e Exportador JSON
+    │   ├── client_app.py                          # Nós clientes periféricos
+    │   └── attacks.py                             # Biblioteca dos 7 algoritmos de ataque
+    │
+    └── resultados_ataque_furtivo/                 # 📁 PASTA EXCLUSIVA DE RESULTADOS
+        ├── README.md                              # Guia de interpretação de dados
+        ├── metrics_json/                          # 📊 Arquivos JSON brutos com todas as métricas
+        ├── graficos/                              # 📈 Figuras PNG geradas com qualidade acadêmica
+        │   └── matrizes_confusao/                 # 🗺️ Heatmaps 10x10 da Matriz de Confusão
+        └── modelos/                               # 💾 Checkpoints dos modelos treinados (.pt)
 ```
 
 ---
@@ -92,6 +111,8 @@ flwr run . --stream --run-config "defense_mode='Bulyan' attack_type='gradient_as
 | `dirichlet_alpha` | Float | `100.0` (IID), `1.0` (Non-IID médio), `0.1` (Non-IID extremo) | Nível de assimetria dos dados entre os clientes. |
 | `num-server-rounds`| Inteiro | `5`, `10`, `15`, `20` | Número de rodadas globais de treinamento federado. |
 | `local-epochs` | Inteiro | `1`, `3`, `5` | Quantidade de épocas de treino local em cada cliente por rodada. |
+| `seed` | Inteiro | `42`, `43`, `44` | Semente pseudoaleatória para repetições estatísticas (*multi-trial*). |
+
 
 ---
 

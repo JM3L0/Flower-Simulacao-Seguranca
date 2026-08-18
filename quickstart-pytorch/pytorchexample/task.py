@@ -44,45 +44,45 @@ def apply_transforms(batch):
     return batch
 
 
+_current_fds_config = None
+
+
 def load_data(
     partition_id: int,
     num_partitions: int,
     batch_size: int,
     dirichlet_alpha: float = 1.0,
+    seed: int = 42,
 ):
-    """Load partition CIFAR10 data with Dirichlet-based heterogeneity.
+    """Load partition CIFAR10 data with Dirichlet-based heterogeneity and configurable seed.
 
     Args:
         partition_id: ID of the partition to load.
         num_partitions: Total number of partitions.
         batch_size: Batch size for the DataLoader.
         dirichlet_alpha: Concentration parameter for Dirichlet distribution.
-            Lower values = more heterogeneous (non-IID) data.
-            Higher values = more homogeneous (closer to IID) data.
+        seed: Random seed for partitioner and split reproducibility.
     """
-    # Only initialize `FederatedDataset` once
-    global fds
-    if fds is None:
-        # =====================================================================
-        # PARTICIONAMENTO HETEROGÊNEO (Non-IID via Dirichlet)
-        # alpha baixo (ex: 0.1) → dados muito heterogêneos (non-IID extremo)
-        # alpha alto  (ex: 100) → dados quase homogêneos (próximo de IID)
-        # Controle dinâmico via: flwr run . --run-config "dirichlet_alpha=0.3"
-        # =====================================================================
+    global fds, _current_fds_config
+    config_key = (num_partitions, dirichlet_alpha, seed)
+
+    if fds is None or _current_fds_config != config_key:
         partitioner = DirichletPartitioner(
             num_partitions=num_partitions,
             partition_by="label",
             alpha=dirichlet_alpha,
             min_partition_size=10,
-            seed=42,
+            seed=seed,
         )
         fds = FederatedDataset(
             dataset="uoft-cs/cifar10",
             partitioners={"train": partitioner},
         )
+        _current_fds_config = config_key
+
     partition = fds.load_partition(partition_id)
     # Divide data on each node: 80% train, 20% test
-    partition_train_test = partition.train_test_split(test_size=0.2, seed=42)
+    partition_train_test = partition.train_test_split(test_size=0.2, seed=seed)
     # Construct dataloaders
     partition_train_test = partition_train_test.with_transform(apply_transforms)
     trainloader = DataLoader(
@@ -90,6 +90,7 @@ def load_data(
     )
     testloader = DataLoader(partition_train_test["test"], batch_size=batch_size)
     return trainloader, testloader
+
 
 
 def load_centralized_dataset():
@@ -186,18 +187,109 @@ def train_with_attack(net, trainloader, epochs, lr, device, poison_rate=0.0, att
     return avg_trainloss, total_poisoned
 
 
-def test(net, testloader, device):
-    """Validate the model on the test set."""
+CIFAR10_CLASSES = [
+    "airplane", "automobile", "bird", "cat", "deer",
+    "dog", "frog", "horse", "ship", "truck"
+]
+
+
+def test(
+    net,
+    testloader,
+    device,
+    compute_audit: bool = False,
+    attack_type: str = "label_flipping",
+    source_class: int = 3,
+    target_class: int = 5,
+    patch_size: int = 4,
+):
+    """Validate the model on the test set, with optional per-class audit and backdoor metrics."""
     net.to(device)
     criterion = torch.nn.CrossEntropyLoss()
     correct, loss = 0, 0.0
+
+    # Estruturas para auditoria granular
+    num_classes = len(CIFAR10_CLASSES)
+    conf_matrix = [[0] * num_classes for _ in range(num_classes)]
+    per_class_correct = [0] * num_classes
+    per_class_total = [0] * num_classes
+
+    # Métricas de Backdoor ASR
+    backdoor_target_count = 0
+    backdoor_source_total = 0
+
+    # Para Trigger Patch
+    trigger_success = 0
+    trigger_total = 0
+
     with torch.no_grad():
         for batch in testloader:
             images = batch["img"].to(device)
             labels = batch["label"].to(device)
             outputs = net(images)
             loss += criterion(outputs, labels).item()
-            correct += (torch.max(outputs.data, 1)[1] == labels).sum().item()
+            preds = torch.max(outputs.data, 1)[1]
+            correct += (preds == labels).sum().item()
+
+            if compute_audit:
+                for true_lbl, pred_lbl in zip(labels.cpu().tolist(), preds.cpu().tolist()):
+                    conf_matrix[true_lbl][pred_lbl] += 1
+                    per_class_total[true_lbl] += 1
+                    if true_lbl == pred_lbl:
+                        per_class_correct[true_lbl] += 1
+
+                    # Medição ASR para Targeted Backdoor
+                    if true_lbl == source_class:
+                        backdoor_source_total += 1
+                        if pred_lbl == target_class:
+                            backdoor_target_count += 1
+
+                # Se o ataque avaliado for Trigger Patch, testa em um lote com o patch aplicado
+                if attack_type == "trigger_patch":
+                    patched_images = images.clone()
+                    _, h, w = patched_images.shape[1:]
+                    patched_images[:, :, h - patch_size:h, w - patch_size:w] = 1.0
+                    trigger_outputs = net(patched_images)
+                    trigger_preds = torch.max(trigger_outputs.data, 1)[1]
+                    for true_lbl, t_pred in zip(labels.cpu().tolist(), trigger_preds.cpu().tolist()):
+                        if true_lbl != 0: # Não conta a própria classe alvo
+                            trigger_total += 1
+                            if t_pred == 0:
+                                trigger_success += 1
+
     accuracy = correct / len(testloader.dataset)
     loss = loss / len(testloader)
-    return loss, accuracy
+
+    if not compute_audit:
+        return loss, accuracy
+
+    # Calcular Acurácia / Recall por classe
+    per_class_accuracy = {}
+    for i, cls_name in enumerate(CIFAR10_CLASSES):
+        tot = per_class_total[i]
+        acc = (per_class_correct[i] / tot) if tot > 0 else 0.0
+        per_class_accuracy[cls_name] = round(acc, 4)
+
+    # Calcular Attack Success Rate (ASR)
+    if attack_type == "targeted_backdoor":
+        asr = (backdoor_target_count / backdoor_source_total) if backdoor_source_total > 0 else 0.0
+    elif attack_type == "trigger_patch":
+        asr = (trigger_success / trigger_total) if trigger_total > 0 else 0.0
+    else:
+        asr = 0.0
+
+    source_recall = per_class_accuracy.get(CIFAR10_CLASSES[source_class], 0.0)
+    target_recall = per_class_accuracy.get(CIFAR10_CLASSES[target_class], 0.0)
+
+    audit_metrics = {
+        "confusion_matrix": conf_matrix,
+        "per_class_accuracy": per_class_accuracy,
+        "asr": round(asr, 4),
+        "source_class_name": CIFAR10_CLASSES[source_class],
+        "source_class_recall": source_recall,
+        "target_class_name": CIFAR10_CLASSES[target_class],
+        "target_class_recall": target_recall,
+    }
+
+    return loss, accuracy, audit_metrics
+

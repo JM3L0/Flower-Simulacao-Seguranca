@@ -1,15 +1,16 @@
 """
-laboratorio.py — Interface interativa para o Laboratório de Segurança Federada.
+laboratorio.py — Interface Interativa para o Laboratório de Segurança Federada.
 
 Execute na RAIZ do projeto:
     python laboratorio.py
 
-O script cuida de:
-  - Configurar PYTHONIOENCODING=utf-8 automaticamente
-  - Executar cada flwr run . --stream dentro de quickstart-pytorch/
-  - Fazer ray stop + pausa entre execuções para evitar travamentos
-  - Gerar gráficos automaticamente após cada lote
-  - Arquivar os resultados em experimentos/ com nome descritivo
+O script gerencia automaticamente:
+  - Configuração de UTF-8 no terminal Windows
+  - Execução dos lotes de simulação com Flower no subdiretório quickstart-pytorch/
+  - Suporte a repetições estatísticas (Multi-Trial com Seeds variadas para curvas suaves)
+  - Limpeza de processos Ray e pausas seguras entre rodadas
+  - Geração automática das figuras científicas do Artigo 1 e tabelas de resumo (CAI, ASR, etc.)
+  - Arquivamento organizado dos experimentos em experimentos/
 """
 
 import os
@@ -17,15 +18,17 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
 # ─── Caminhos do projeto ──────────────────────────────────────────────────────
-RAIZ        = Path(__file__).parent
-SRC         = RAIZ / "quickstart-pytorch"
-METRICS_DIR = SRC / "metrics_json"
-GRAFICOS_DIR= SRC / "graficos"
-EXPERIMENTOS= RAIZ / "experimentos"
+RAIZ             = Path(__file__).parent
+SRC              = RAIZ / "quickstart-pytorch"
+BASE_RESULTS_DIR = SRC / "resultados_ataque_furtivo"
+METRICS_DIR      = BASE_RESULTS_DIR / "metrics_json"
+GRAFICOS_DIR     = BASE_RESULTS_DIR / "graficos"
+EXPERIMENTOS     = RAIZ / "experimentos"
 
 # ─── Paleta de cores ANSI ─────────────────────────────────────────────────────
 class Cor:
@@ -36,60 +39,65 @@ class Cor:
     YELLOW = "\033[93m"
     RED    = "\033[91m"
     BLUE   = "\033[94m"
+    MAGENTA= "\033[95m"
     GRAY   = "\033[90m"
 
 def c(texto, cor): return f"{cor}{texto}{Cor.RESET}"
 
-# ─── Lotes pré-definidos ──────────────────────────────────────────────────────
+# ─── Lotes Pré-Definidos para o Artigo 1 & Benchmarks ────────────────────────
 LOTES = {
     "1": {
-        "nome": "Comparar estratégias de defesa",
-        "descricao": "FedAvg vs FedMedian vs Bulyan — mesmo ataque e poison_rate",
+        "nome": "Artigo 1: Ponto Cego sob Targeted Backdoor (4 Defesas em Non-IID)",
+        "descricao": "FedAvg, FedMedian, Krum e Bulyan sob targeted_backdoor (pr=0.4, α=0.1, 10 rodadas)",
         "runs": [
-            {"defense_mode": "FedAvg",    "attack_type": "gaussian_noise", "poison_rate": 0.3},
-            {"defense_mode": "FedMedian", "attack_type": "gaussian_noise", "poison_rate": 0.3},
-            {"defense_mode": "Bulyan",    "attack_type": "gaussian_noise", "poison_rate": 0.3},
-            {"defense_mode": "Krum",      "attack_type": "gaussian_noise", "poison_rate": 0.3},
+            {"defense_mode": "FedAvg",    "attack_type": "targeted_backdoor", "poison_rate": 0.4, "dirichlet_alpha": 0.1, "num-server-rounds": 10, "seed": 42},
+            {"defense_mode": "FedMedian", "attack_type": "targeted_backdoor", "poison_rate": 0.4, "dirichlet_alpha": 0.1, "num-server-rounds": 10, "seed": 42},
+            {"defense_mode": "Krum",      "attack_type": "targeted_backdoor", "poison_rate": 0.4, "dirichlet_alpha": 0.1, "num-server-rounds": 10, "seed": 42},
+            {"defense_mode": "Bulyan",    "attack_type": "targeted_backdoor", "poison_rate": 0.4, "dirichlet_alpha": 0.1, "num-server-rounds": 10, "seed": 42},
         ],
     },
     "2": {
-        "nome": "Variar poison_rate (curva de colapso)",
-        "descricao": "FedAvg com label_flipping, poison_rate de 0.0 a 0.9",
+        "nome": "Artigo 1: Efeito da Assimetria (IID vs Non-IID Extremo)",
+        "descricao": "Bulyan e FedAvg sob targeted_backdoor em α=100.0 (IID) vs α=0.1 (Non-IID)",
         "runs": [
-            {"defense_mode": "FedAvg", "attack_type": "label_flipping", "poison_rate": pr}
-            for pr in [0.0, 0.1, 0.3, 0.5, 0.7, 0.9]
+            {"defense_mode": "FedAvg", "attack_type": "targeted_backdoor", "poison_rate": 0.4, "dirichlet_alpha": 100.0, "num-server-rounds": 10, "seed": 42},
+            {"defense_mode": "Bulyan", "attack_type": "targeted_backdoor", "poison_rate": 0.4, "dirichlet_alpha": 100.0, "num-server-rounds": 10, "seed": 42},
+            {"defense_mode": "FedAvg", "attack_type": "targeted_backdoor", "poison_rate": 0.4, "dirichlet_alpha": 0.1,   "num-server-rounds": 10, "seed": 42},
+            {"defense_mode": "Bulyan", "attack_type": "targeted_backdoor", "poison_rate": 0.4, "dirichlet_alpha": 0.1,   "num-server-rounds": 10, "seed": 42},
         ],
     },
     "3": {
-        "nome": "Variar heterogeneidade (Dirichlet Alpha)",
-        "descricao": "Bulyan com model_replacement, dirichlet_alpha de IID a non-IID extremo",
+        "nome": "Artigo 1: Ataque Trigger Patch Físico (Padrão Visual)",
+        "descricao": "FedAvg vs Bulyan sob trigger_patch com marca no canto da imagem (pr=0.4, α=0.1)",
         "runs": [
-            {"defense_mode": "Bulyan", "attack_type": "model_replacement",
-             "poison_rate": 1.0, "dirichlet_alpha": da}
-            for da in [100.0, 10.0, 1.0, 0.5, 0.1]
+            {"defense_mode": "FedAvg", "attack_type": "trigger_patch", "poison_rate": 0.4, "dirichlet_alpha": 0.1, "num-server-rounds": 10, "seed": 42},
+            {"defense_mode": "Bulyan", "attack_type": "trigger_patch", "poison_rate": 0.4, "dirichlet_alpha": 0.1, "num-server-rounds": 10, "seed": 42},
         ],
     },
     "4": {
-        "nome": "Matriz completa 3×5 (defesas × poison_rates)",
-        "descricao": "FedAvg, FedMedian, Bulyan × poison_rate 0.0→0.9 com gaussian_noise",
+        "nome": "Multi-Trial Rigoroso (3 Seeds para Curvas Suaves e Bandas de Incerteza)",
+        "descricao": "Executa Bulyan e FedAvg 3x com seeds 42, 43, 44 para calcular média e desvio padrão",
         "runs": [
-            {"defense_mode": d, "attack_type": "gaussian_noise", "poison_rate": pr}
-            for d in ["FedAvg", "FedMedian", "Bulyan"]
-            for pr in [0.0, 0.1, 0.3, 0.5, 0.7, 0.9]
+            {"defense_mode": "FedAvg", "attack_type": "targeted_backdoor", "poison_rate": 0.4, "dirichlet_alpha": 0.1, "num-server-rounds": 10, "seed": 42},
+            {"defense_mode": "FedAvg", "attack_type": "targeted_backdoor", "poison_rate": 0.4, "dirichlet_alpha": 0.1, "num-server-rounds": 10, "seed": 43},
+            {"defense_mode": "FedAvg", "attack_type": "targeted_backdoor", "poison_rate": 0.4, "dirichlet_alpha": 0.1, "num-server-rounds": 10, "seed": 44},
+            {"defense_mode": "Bulyan", "attack_type": "targeted_backdoor", "poison_rate": 0.4, "dirichlet_alpha": 0.1, "num-server-rounds": 10, "seed": 42},
+            {"defense_mode": "Bulyan", "attack_type": "targeted_backdoor", "poison_rate": 0.4, "dirichlet_alpha": 0.1, "num-server-rounds": 10, "seed": 43},
+            {"defense_mode": "Bulyan", "attack_type": "targeted_backdoor", "poison_rate": 0.4, "dirichlet_alpha": 0.1, "num-server-rounds": 10, "seed": 44},
         ],
     },
     "5": {
-        "nome": "Morte Súbita — gradient_ascent vs defesas",
-        "descricao": "Testa o ataque mais destrutivo contra FedAvg, FedMedian e Bulyan",
+        "nome": "Controle de Ataque Bruto (Morte Súbita — Gradient Ascent)",
+        "descricao": "Inversão de gradiente contra FedAvg, FedMedian, Krum e Bulyan",
         "runs": [
-            {"defense_mode": d, "attack_type": "gradient_ascent", "poison_rate": 1.0}
-            for d in ["FedAvg", "FedMedian", "Bulyan"]
+            {"defense_mode": d, "attack_type": "gradient_ascent", "poison_rate": 1.0, "num-server-rounds": 5, "seed": 42}
+            for d in ["FedAvg", "FedMedian", "Krum", "Bulyan"]
         ],
     },
 }
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
-def separador(char="═", largura=62):
+def separador(char="═", largura=70):
     print(c(char * largura, Cor.CYAN))
 
 def cabecalho(titulo):
@@ -123,13 +131,11 @@ def executar_run(params: dict, numero: int, total: int) -> bool:
 
     print()
     print(c(f"  ▶  Execução {numero}/{total}", Cor.BOLD + Cor.YELLOW))
-    print(c(f"     {run_config}", Cor.GRAY))
-    separador("─")
+    print(c(f"     Configuração: {run_config}", Cor.GRAY))
+    separador("─", 70)
 
-    # Monta o comando completo
     cmd = f'flwr run . --stream --run-config "{run_config}"'
 
-    # Configura ambiente com encoding UTF-8
     env = os.environ.copy()
     env["PYTHONIOENCODING"] = "utf-8"
 
@@ -145,19 +151,17 @@ def executar_run(params: dict, numero: int, total: int) -> bool:
         print(c("\n  [!] Execução interrompida pelo usuário.", Cor.RED))
         return False
 
-    # Limpa Ray entre execuções para evitar travamentos
     if numero < total:
-        print(c("\n  → Limpando processos Ray...", Cor.GRAY))
-        subprocess.run("ray stop", shell=True, cwd=str(SRC),
-                       capture_output=True, env=env)
-        import time; time.sleep(4)
+        print(c("\n  → Pausa e limpeza de processos Ray...", Cor.GRAY))
+        subprocess.run("ray stop", shell=True, cwd=str(SRC), capture_output=True, env=env)
+        time.sleep(3)
 
     return sucesso
 
 def gerar_graficos():
     """Executa plotar_resultados.py dentro de quickstart-pytorch/."""
     print()
-    print(c("  → Gerando gráficos...", Cor.CYAN))
+    print(c("  → Processando métricas e gerando figuras científicas...", Cor.CYAN))
     env = os.environ.copy()
     env["PYTHONIOENCODING"] = "utf-8"
     resultado = subprocess.run(
@@ -167,12 +171,12 @@ def gerar_graficos():
         env=env,
     )
     if resultado.returncode == 0:
-        print(c("  ✔  Gráficos gerados.", Cor.GREEN))
+        print(c("  ✔  Figuras científicas e tabelas estatísticas geradas.", Cor.GREEN))
     else:
-        print(c("  ✘  Erro ao gerar gráficos.", Cor.RED))
+        print(c("  ✘  Erro ao gerar figuras.", Cor.RED))
 
 def arquivar_resultados(nome_descritivo: str):
-    """Move JSONs e PNGs para experimentos/expXX_nome/."""
+    """Move JSONs, PNGs e Tabelas para experimentos/expXX_nome/."""
     num = proximo_numero_experimento()
     slug = re.sub(r"[^\w\s]", "", nome_descritivo).strip().replace(" ", "_").lower()
     pasta = EXPERIMENTOS / f"exp_{num:02d}_{slug}"
@@ -186,32 +190,37 @@ def arquivar_resultados(nome_descritivo: str):
     for f in jsons:
         shutil.move(str(f), str(dados_dir / f.name))
 
-    # Mover PNGs
-    pngs = list(GRAFICOS_DIR.glob("*.png"))
-    for f in pngs:
-        shutil.move(str(f), str(graficos_dir / f.name))
+    # Mover PNGs (incluindo matrizes de confusão)
+    for p in GRAFICOS_DIR.rglob("*.png"):
+        rel = p.relative_to(GRAFICOS_DIR)
+        dest = graficos_dir / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(p), str(dest))
+
+    # Copiar tabelas estatísticas geradas
+    for tab in BASE_RESULTS_DIR.glob("tabela_resumo_estatistico.*"):
+        shutil.copy(str(tab), str(pasta / tab.name))
 
     print()
-    print(c(f"  ✔  Arquivado em: experimentos/{pasta.name}/", Cor.GREEN))
-    print(c(f"     {len(jsons)} JSON(s) → dados/", Cor.GRAY))
-    print(c(f"     {len(pngs)} PNG(s)  → graficos/", Cor.GRAY))
+    print(c(f"  ✔  Resultados arquivados em: experimentos/{pasta.name}/", Cor.GREEN))
+    print(c(f"     {len(jsons)} JSON(s) movidos para dados/", Cor.GRAY))
+    print(c(f"     Figuras salvas em graficos/", Cor.GRAY))
     return pasta
 
 def confirmar(mensagem: str) -> bool:
     resp = input(c(f"\n  {mensagem} [s/N]: ", Cor.YELLOW)).strip().lower()
     return resp in ("s", "sim", "y", "yes")
 
-# ─── Fluxo de execução de um lote ─────────────────────────────────────────────
+# ─── Fluxo de Execução de um Lote ─────────────────────────────────────────────
 def executar_lote(runs: list[dict], nome_lote: str):
     """Executa uma lista de runs e arquiva os resultados."""
     total = len(runs)
     print()
-    print(c(f"  Total de execuções: {total}", Cor.CYAN))
+    print(c(f"  Total de execuções no lote: {total}", Cor.CYAN))
 
-    # Informa quantos JSONs já existem (sem apagar nada)
     jsons_anteriores = list(METRICS_DIR.glob("metrics_*.json"))
     if jsons_anteriores:
-        print(c(f"\n  ℹ  {len(jsons_anteriores)} JSON(s) já existem em metrics_json/ — serão preservados.", Cor.GRAY))
+        print(c(f"\n  ℹ  {len(jsons_anteriores)} JSON(s) já existem na pasta — serão somados na análise.", Cor.GRAY))
 
     if not confirmar("Iniciar execuções agora?"):
         print(c("  Cancelado.", Cor.GRAY))
@@ -224,17 +233,14 @@ def executar_lote(runs: list[dict], nome_lote: str):
         if ok:
             sucessos += 1
 
-    # Resumo
     separador()
     print(c(f"  Concluído: {sucessos}/{total} execuções bem-sucedidas.", Cor.GREEN if sucessos == total else Cor.YELLOW))
 
-    # Gerar gráficos
     jsons_gerados = list(METRICS_DIR.glob("metrics_*.json"))
     if jsons_gerados:
-        if confirmar("Gerar gráficos comparativos?"):
+        if confirmar("Gerar figuras científicas e tabelas estatísticas?"):
             gerar_graficos()
 
-        # Arquivar
         if confirmar("Arquivar resultados em experimentos/?"):
             nome = input(c("  Nome descritivo do experimento: ", Cor.CYAN)).strip()
             if not nome:
@@ -244,39 +250,41 @@ def executar_lote(runs: list[dict], nome_lote: str):
         print(c("  [!] Nenhum JSON gerado — nada a arquivar.", Cor.YELLOW))
 
 # ─── Opção: Experimento Customizado ───────────────────────────────────────────
-ATAQUES  = ["label_flipping", "gaussian_noise", "targeted_backdoor",
-            "trigger_patch", "gradient_ascent", "model_replacement", "free_rider"]
-DEFESAS  = ["FedAvg", "FedMedian", "Bulyan", "Krum"]
+ATAQUES = [
+    "targeted_backdoor", "trigger_patch", "label_flipping",
+    "gaussian_noise", "gradient_ascent", "model_replacement", "free_rider"
+]
+DEFESAS = ["FedAvg", "FedMedian", "Krum", "Bulyan"]
 
 def menu_customizado():
-    """Interface para configurar um experimento com parâmetros manuais."""
-    cabecalho("Experimento Customizado")
+    """Interface interativa para configurar experimentos personalizados com múltiplas repetições."""
+    cabecalho("Configurar Experimento Personalizado")
 
-    params = {}
+    params_base = {}
 
     # Defesa
-    print(c("\n  Estratégia de defesa:", Cor.CYAN))
+    print(c("\n  Estratégia de Defesa:", Cor.CYAN))
     for i, d in enumerate(DEFESAS, 1):
         print(f"    [{i}] {d}")
     while True:
         try:
             idx = int(input(c("  Escolha [1-4]: ", Cor.YELLOW))) - 1
             if 0 <= idx < len(DEFESAS):
-                params["defense_mode"] = DEFESAS[idx]
+                params_base["defense_mode"] = DEFESAS[idx]
                 break
         except ValueError:
             pass
         print(c("  Opção inválida.", Cor.RED))
 
     # Ataque
-    print(c("\n  Tipo de ataque:", Cor.CYAN))
+    print(c("\n  Tipo de Ataque:", Cor.CYAN))
     for i, a in enumerate(ATAQUES, 1):
         print(f"    [{i}] {a}")
     while True:
         try:
             idx = int(input(c(f"  Escolha [1-{len(ATAQUES)}]: ", Cor.YELLOW))) - 1
             if 0 <= idx < len(ATAQUES):
-                params["attack_type"] = ATAQUES[idx]
+                params_base["attack_type"] = ATAQUES[idx]
                 break
         except ValueError:
             pass
@@ -285,9 +293,9 @@ def menu_customizado():
     # poison_rate
     while True:
         try:
-            val = float(input(c("  poison_rate [0.0 a 1.0, padrão 0.2]: ", Cor.YELLOW)) or "0.2")
+            val = float(input(c("  Taxa de envenenamento (poison_rate) [0.0 a 1.0, padrão 0.4]: ", Cor.YELLOW)) or "0.4")
             if 0.0 <= val <= 1.0:
-                params["poison_rate"] = val
+                params_base["poison_rate"] = val
                 break
         except ValueError:
             pass
@@ -296,9 +304,9 @@ def menu_customizado():
     # dirichlet_alpha
     while True:
         try:
-            val = float(input(c("  dirichlet_alpha [ex: 0.1 non-IID / 1.0 moderado / 100.0 IID, padrão 1.0]: ", Cor.YELLOW)) or "1.0")
+            val = float(input(c("  Dirichlet Alpha (Heterogeneidade) [0.1=Non-IID extremo, 100.0=IID, padrão 0.1]: ", Cor.YELLOW)) or "0.1")
             if val > 0:
-                params["dirichlet_alpha"] = val
+                params_base["dirichlet_alpha"] = val
                 break
         except ValueError:
             pass
@@ -307,62 +315,81 @@ def menu_customizado():
     # num-server-rounds
     while True:
         try:
-            val = int(input(c("  num-server-rounds [padrão 5]: ", Cor.YELLOW)) or "5")
+            val = int(input(c("  Número de rodadas (num-server-rounds) [padrão 10]: ", Cor.YELLOW)) or "10")
             if val > 0:
-                params["num-server-rounds"] = val
+                params_base["num-server-rounds"] = val
                 break
         except ValueError:
             pass
         print(c("  Valor inválido.", Cor.RED))
 
-    # Resumo
+    # Quantidade de repetições (Trials / Seeds)
+    while True:
+        try:
+            trials_count = int(input(c("  Quantas repetições estatísticas (seeds)? [1 para único, 3 ou 5 para média, padrão 1]: ", Cor.YELLOW)) or "1")
+            if trials_count >= 1:
+                break
+        except ValueError:
+            pass
+        print(c("  Valor inválido.", Cor.RED))
+
+    # Monta a lista de execuções com seeds incrementais (42, 43, 44...)
+    runs = []
+    base_seed = 42
+    for i in range(trials_count):
+        p = params_base.copy()
+        p["seed"] = base_seed + i
+        runs.append(p)
+
     print()
-    separador("─")
-    print(c("  Configuração:", Cor.BOLD))
-    for k, v in params.items():
+    separador("─", 70)
+    print(c(f"  Configuração Pronta ({trials_count} execuções programadas):", Cor.BOLD))
+    for k, v in params_base.items():
         print(f"    {c(k, Cor.CYAN)}: {c(str(v), Cor.YELLOW)}")
-    separador("─")
+    if trials_count > 1:
+        print(f"    {c('Seeds programadas', Cor.CYAN)}: {c(str([base_seed + i for i in range(trials_count)]), Cor.YELLOW)}")
+    separador("─", 70)
 
-    executar_lote([params], "experimento_customizado")
+    executar_lote(runs, "experimento_customizado")
 
-# ─── Opção: Ver experimentos salvos ───────────────────────────────────────────
+# ─── Opção: Ver Experimentos Salvos ───────────────────────────────────────────
 def ver_experimentos():
-    cabecalho("Experimentos Salvos")
+    cabecalho("Histórico de Experimentos Salvos")
     pastas = sorted([p for p in EXPERIMENTOS.iterdir() if p.is_dir()])
     if not pastas:
-        print(c("  Nenhum experimento arquivado ainda.", Cor.GRAY))
+        print(c("  Nenhum experimento arquivado em experimentos/ ainda.", Cor.GRAY))
         return
     for pasta in pastas:
         dados    = list((pasta / "dados").glob("*.json"))    if (pasta / "dados").exists()    else []
         graficos = list((pasta / "graficos").glob("*.png"))  if (pasta / "graficos").exists() else []
         print(f"\n  {c(pasta.name, Cor.BOLD)}")
-        print(f"    {c(str(len(dados)), Cor.CYAN)} JSON(s)  |  {c(str(len(graficos)), Cor.CYAN)} PNG(s)")
+        print(f"    {c(str(len(dados)), Cor.CYAN)} JSON(s) de métricas  |  {c(str(len(graficos)), Cor.CYAN)} Figuras PNG")
 
-# ─── Menu principal ───────────────────────────────────────────────────────────
+# ─── Menu Principal ───────────────────────────────────────────────────────────
 def menu_principal():
     os.system("cls" if os.name == "nt" else "clear")
-    separador("═")
-    print(c("       LABORATÓRIO DE SEGURANÇA FEDERADA", Cor.BOLD + Cor.CYAN))
-    print(c("       Flower + PyTorch + CIFAR-10", Cor.GRAY))
-    separador("═")
+    separador("═", 70)
+    print(c("       LABORATÓRIO DE SEGURANÇA FEDERADA (FLOWER + PYTORCH)", Cor.BOLD + Cor.CYAN))
+    print(c("       Estudo Empírico de Ataques Furtivos & Avaliação de Defesas", Cor.GRAY))
+    separador("═", 70)
 
-    print(c("\n  Lotes pré-definidos:", Cor.BOLD))
+    print(c("\n  🔬 Lotes Pré-Definidos do Artigo 1:", Cor.BOLD))
     for chave, lote in LOTES.items():
         total = len(lote["runs"])
         print(f"    [{c(chave, Cor.YELLOW)}] {lote['nome']}")
         print(c(f"        {lote['descricao']} ({total} execuções)", Cor.GRAY))
 
-    print(c("\n  Outras opções:", Cor.BOLD))
-    print(f"    [{c('6', Cor.YELLOW)}] Experimento customizado")
-    print(f"    [{c('7', Cor.YELLOW)}] Ver experimentos salvos")
+    print(c("\n  ⚙️  Opções Avançadas:", Cor.BOLD))
+    print(f"    [{c('6', Cor.YELLOW)}] Configurar Experimento Personalizado (com N repetições)")
+    print(f"    [{c('7', Cor.YELLOW)}] Ver Histórico de Experimentos Arquivados")
+    print(f"    [{c('8', Cor.YELLOW)}] Re-gerar Gráficos e Tabelas dos Resultados Atuais")
     print(f"    [{c('0', Cor.YELLOW)}] Sair")
 
-    separador("─")
-    return input(c("  Escolha: ", Cor.YELLOW)).strip()
+    separador("─", 70)
+    return input(c("  Escolha uma opção: ", Cor.YELLOW)).strip()
 
-# ─── Entry point ──────────────────────────────────────────────────────────────
+# ─── Entry Point ──────────────────────────────────────────────────────────────
 def main():
-    # Garante que os diretórios necessários existem
     METRICS_DIR.mkdir(parents=True, exist_ok=True)
     GRAFICOS_DIR.mkdir(parents=True, exist_ok=True)
     EXPERIMENTOS.mkdir(exist_ok=True)
@@ -382,14 +409,17 @@ def main():
         elif escolha == "7":
             ver_experimentos()
 
+        elif escolha == "8":
+            gerar_graficos()
+
         elif escolha == "0":
-            print(c("\n  Saindo. Até logo!\n", Cor.CYAN))
+            print(c("\n  Encerrando laboratório. Até logo!\n", Cor.CYAN))
             break
 
         else:
             print(c("  Opção inválida.", Cor.RED))
 
-        input(c("\n  Pressione Enter para voltar ao menu...", Cor.GRAY))
+        input(c("\n  Pressione Enter para voltar ao menu principal...", Cor.GRAY))
 
 if __name__ == "__main__":
     main()

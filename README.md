@@ -18,11 +18,26 @@ python plotar_resultados.py
 
 ## Estrutura do projeto
 
-| Pasta | Conteúdo |
-|---|---|
-| `quickstart-pytorch/` | Código-fonte — rode `flwr run .` aqui |
-| `experimentos/` | Histórico de experimentos anteriores (JSONs + gráficos) |
-| `docs/` | Documentação completa do laboratório |
+```text
+Flower-Simulacao-Seguranca/
+│
+├── docs/                                          # 🧠 DOCUMENTAÇÃO UNIFICADA E PESQUISA
+│   ├── 00_COMECE_AQUI.md                          # Portal central e quickstart
+│   ├── 1_laboratorio/                             # Guias técnicos, comandos do terminal e catálogo
+│   ├── 2_pesquisa_ativa/                          # Artigo 1 (Estudo Empírico) e Artigo 2 (Benchmark)
+│   └── 3_portfolio_e_teoria/                      # Portfólio das 10 ideias e modelagem SPN
+│
+├── experimentos/                                  # 🗄️ Histórico de rodadas anteriores (exp_01 a exp_04)
+│
+└── quickstart-pytorch/                            # 🚀 O MOTOR EXECUTÁVEL (FLOWER + PYTORCH)
+    ├── pyproject.toml                             # Configurações do Flower
+    ├── plotar_resultados.py                       # Gerador automático das figuras do artigo
+    ├── pytorchexample/                            # Código Python (task.py, server_app.py, client_app.py, attacks.py)
+    └── resultados_ataque_furtivo/                 # 📁 PASTA EXCLUSIVA DE RESULTADOS DO ARTIGO 1
+        ├── metrics_json/                          # 📊 Arquivos JSON com todas as métricas por classe
+        ├── graficos/                              # 📈 Figuras PNG (Divergência, Matrizes de Confusão, ASR)
+        └── modelos/                               # 💾 Checkpoints (.pt)
+```
 
 ## Documentação
 

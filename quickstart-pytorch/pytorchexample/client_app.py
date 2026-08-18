@@ -33,11 +33,13 @@ def train(msg: Message, context: Context):
     taxa_ataque = context.run_config["poison_rate"]
     dirichlet_alpha = context.run_config["dirichlet_alpha"]
     attack_type = context.run_config.get("attack_type", "label_flipping")
+    seed = context.run_config.get("seed", 42)
 
     # Load the data with Dirichlet-based non-IID partitioning
     trainloader, _ = load_data(
-        partition_id, num_partitions, batch_size, dirichlet_alpha
+        partition_id, num_partitions, batch_size, dirichlet_alpha, seed=seed
     )
+
 
     # =========================================================================
     # TREINAMENTO COM ATAQUE DE ENVENENAMENTO

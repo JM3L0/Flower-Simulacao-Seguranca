@@ -28,11 +28,6 @@ METRICS_DIR = os.path.join(BASE_RESULTS_DIR, "metrics_json")
 OUTPUT_DIR = os.path.join(BASE_RESULTS_DIR, "graficos")
 CM_OUTPUT_DIR = os.path.join(OUTPUT_DIR, "matrizes_confusao")
 
-# Fallback se a pasta nova ainda não tiver JSONs
-if not os.path.exists(METRICS_DIR) or len(glob.glob(os.path.join(METRICS_DIR, "*.json"))) == 0:
-    FALLBACK_DIR = os.path.join(SCRIPT_DIR, "metrics_json")
-    if os.path.exists(FALLBACK_DIR) and len(glob.glob(os.path.join(FALLBACK_DIR, "*.json"))) > 0:
-        METRICS_DIR = FALLBACK_DIR
 
 plt.rcParams.update({
     "font.family": "serif",
@@ -424,8 +419,25 @@ def gerar_tabela_resumo_estatistico(cenarios: list[dict], output_base: str):
     with open(csv_path, "w", encoding="utf-8") as f:
         f.write("\n".join(linhas_csv))
 
-    print(f"  [✓] Tabela Estatística Markdown salva: {md_path}")
-    print(f"  [✓] Tabela Estatística CSV salva:      {csv_path}")
+    # Exibição resumida e limpa no console/terminal
+    print("\n" + "═" * 90)
+    print("  📋 PAINEL RESUMO ESTATÍSTICO DOS EXPERIMENTOS")
+    print("═" * 90)
+    print(f"{'DEFESA':<11} | {'ATAQUE':<18} | {'ALPHA':<5} | {'TRIALS':<6} | {'ACC GLOBAL (μ±σ)':<18} | {'RECALL VÍTIMA':<15} | {'ASR (μ±σ)':<12}")
+    print("─" * 90)
+    for c in cenarios:
+        n = c["num_trials"]
+        acc_str = f"{c['final_acc_mean']*100:5.2f} ± {c['final_acc_std']*100:4.2f}%" if n > 1 else f"{c['final_acc_mean']*100:5.2f}%"
+        rec_str = f"{c['final_rec_mean']*100:5.2f}%" if n == 1 else f"{c['final_rec_mean']*100:5.2f} ± {c['final_rec_std']*100:4.2f}%"
+        asr_str = f"{c['final_asr_mean']*100:5.2f}%" if n == 1 else f"{c['final_asr_mean']*100:5.2f} ± {c['final_asr_std']*100:4.2f}%"
+        
+        # Alerta visual de ponto cego
+        status_alerta = " 🚨 (Ponto Cego!)" if c['final_rec_mean'] < 0.20 and c['attack_type'] in ['targeted_backdoor', 'trigger_patch'] else ""
+        print(f"{c['strategy']:<11} | {c['attack_type']:<18} | {str(c['dirichlet_alpha']):<5} | {n:<6} | {acc_str:<18} | {rec_str:<15} | {asr_str:<12}{status_alerta}")
+    print("═" * 90)
+    print(f"  [✓] Tabela detalhada salva em Markdown: {md_path}")
+    print(f"  [✓] Tabela detalhada salva em CSV:      {csv_path}")
+
 
 
 def main():

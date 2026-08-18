@@ -13,8 +13,10 @@ docs/
 │
 ├── 1_laboratorio/                             # 📘 GUIA TÉCNICO E OPERACIONAL
 │   ├── 01_guia_operacional_e_terminal.md      # Instalação, arquitetura de código, --run-config e plotagem
-│   └── 02_catalogo_ataques_e_defesas.md       # Catálogo dos 7 ataques, 4 defesas convencionais, DP e SecAgg
+│   ├── 02_catalogo_ataques_e_defesas.md       # Catálogo dos 7 ataques, 4 defesas convencionais, DP e SecAgg
+│   └── 03_guia_execucao_google_colab.md       # ☁️ Guia passo a passo de execução em GPU T4 no Colab
 │
+
 ├── 2_pesquisa_ativa/                          # 🔬 PESQUISA EM FOCO: ARTIGO 1 & ARTIGO 2
 │   ├── 01_artigo1_backdoors_e_auditoria.md    # Artigo 1: Estudo Empírico do Impacto de Ataques Furtivos sob Defesas Convencionais
 │   ├── 02_pesquisa_bibliografica_e_prompts.md # Prompt mestre para IA, buscas booleanas e fichamento

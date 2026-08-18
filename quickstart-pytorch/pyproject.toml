@@ -29,10 +29,16 @@ num-server-rounds = 5
 fraction-evaluate = 0.5
 local-epochs = 1
 learning-rate = 0.1
-batch-size = 32
+batch-size = 64
 poison_rate = 0.2
 dirichlet_alpha = 1.0
 defense_mode = "FedAvg"
 attack_type = "label_flipping"
 seed = 42
+
+[tool.flwr.federations.default]
+options.num-supernodes = 10
+options.backend.client-resources.num-cpus = 2
+options.backend.client-resources.num-gpus = 0.25
+
 

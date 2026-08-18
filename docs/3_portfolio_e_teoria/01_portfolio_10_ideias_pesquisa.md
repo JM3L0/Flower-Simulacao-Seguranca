@@ -27,8 +27,8 @@ Este documento consolida o **portfólio completo de 10 propostas de artigos cien
 * **Objetivo**: Demonstrar que o Krum e o Bulyan confundem clientes honestos especializados com invasores sob assimetria Dirichlet ($\alpha = 0.1$).
 * **Métricas**: Taxa de Falsos Positivos de Descarte (FPR) de clientes honestos e queda de acurácia global.
 
-### Ideia 2: Resiliência a Backdoors Furtivos & Auditoria por Classe (Nota 9.5 — *Selecionada para Artigo 1*)
-* **Objetivo**: Expor o ponto cego da acurácia global sob `targeted_backdoor` e propor o módulo de auditoria por matriz de confusão.
+### Ideia 2: Impacto de Backdoors Furtivos sob Defesas Convencionais (Nota 9.5 — *Selecionada para Artigo 1*)
+* **Objetivo**: Estudo empírico do impacto de ataques furtivos (Targeted Backdoors) em modelos protegidos pelas defesas convencionais de mercado (FedAvg, FedMedian, Krum, Bulyan), expondo o ponto cego da acurácia global via matriz de confusão e per-class recall.
 
 ### Ideia 3: Carga Computacional Local (`local-epochs`) na Fixação de Tensores (Nota 7.0)
 * **Objetivo**: Avaliar quantas rodadas limpas são necessárias para expurgar um envenenamento gerado com `local-epochs=5` vs `1`.

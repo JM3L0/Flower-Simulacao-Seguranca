@@ -53,7 +53,8 @@ def simular_cenario(
     seed: int = 42,
     num_clients: int = 10,
     batch_size: int = 64,
-    learning_rate: float = 0.1,
+    learning_rate: float = 0.01,
+    local_epochs: int = 2,
     device_str: str = None
 ) -> dict:
     """Executa um cenário completo de Aprendizado Federado de forma direta e transparente."""
@@ -126,7 +127,7 @@ def simular_cenario(
             train_loss, num_poisoned = train_with_attack(
                 net=local_model,
                 trainloader=loader,
-                epochs=1,
+                epochs=local_epochs,
                 lr=learning_rate,
                 device=device,
                 poison_rate=1.0 if is_malicious else 0.0,

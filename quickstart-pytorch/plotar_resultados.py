@@ -228,7 +228,7 @@ def plotar_figura1_ataque_normal(cenarios: list[dict], output_dir: str):
     ax_acc.set_title("(A) Acurácia Global sob Ataque Normal (Ruído)")
     ax_acc.set_xlabel("Rodada de Treinamento")
     ax_acc.set_ylabel("Acurácia Global (%)")
-    ax_acc.set_ylim(0, 85)
+    ax_acc.set_ylim(0, 100)
     ax_acc.legend(loc="best", frameon=True)
 
     ax_loss.set_title("(B) Evolução da Perda (Loss) Global")
@@ -252,18 +252,26 @@ def plotar_figura2_ataque_furtivo(cenarios: list[dict], output_dir: str):
     Subplot 2: Recall da Classe Vítima (Mostra o colapso oculto para 0%).
     """
     furtivos = [c for c in cenarios if c["attack_type"] == "targeted_backdoor"]
+    baseline = [c for c in cenarios if c["poison_rate"] == 0.0]
     if not furtivos:
         return
 
     fig, (ax_acc, ax_rec) = plt.subplots(1, 2, figsize=(14, 5.5))
 
-    ordem_defesas = ["FedAvg", "FedMedian", "Krum", "Bulyan"]
+    ordem_defesas = ["Baseline (Sem Ataque)", "FedAvg", "FedMedian", "Krum", "Bulyan"]
 
     for def_nome in ordem_defesas:
-        c_list = [c for c in furtivos if c["strategy"] == def_nome]
-        if not c_list:
-            continue
-        c = c_list[0]
+        if def_nome == "Baseline (Sem Ataque)":
+            if not baseline:
+                continue
+            c = baseline[0]
+            linestyle = "--"
+        else:
+            c_list = [c for c in furtivos if c["strategy"] == def_nome]
+            if not c_list:
+                continue
+            c = c_list[0]
+            linestyle = "-"
 
         color = DEFENSE_COLORS.get(def_nome, "#555555")
         marker = DEFENSE_MARKERS.get(def_nome, "s")
@@ -275,13 +283,13 @@ def plotar_figura2_ataque_furtivo(cenarios: list[dict], output_dir: str):
         rec_stds = [r["src_recall_std"] * 100 for r in c["rounds_stats"]]
 
         # 1. Acurácia Global Aparentada
-        ax_acc.plot(rounds, acc_means, color=color, marker=marker, linestyle="-", label=f"{def_nome}")
+        ax_acc.plot(rounds, acc_means, color=color, marker=marker, linestyle=linestyle, label=def_nome)
         if c["num_trials"] > 1:
             ax_acc.fill_between(rounds, np.clip(np.array(acc_means) - np.array(acc_stds), 0, 100),
                                 np.clip(np.array(acc_means) + np.array(acc_stds), 0, 100), color=color, alpha=0.15)
 
         # 2. Recall da Classe Vítima (Colapso Oculto)
-        ax_rec.plot(rounds, rec_means, color=color, marker=marker, linestyle="-", label=f"{def_nome}")
+        ax_rec.plot(rounds, rec_means, color=color, marker=marker, linestyle=linestyle, label=def_nome)
         if c["num_trials"] > 1:
             ax_rec.fill_between(rounds, np.clip(np.array(rec_means) - np.array(rec_stds), 0, 100),
                                 np.clip(np.array(rec_means) + np.array(rec_stds), 0, 100), color=color, alpha=0.15)
@@ -289,25 +297,15 @@ def plotar_figura2_ataque_furtivo(cenarios: list[dict], output_dir: str):
     ax_acc.set_title("(A) Acurácia Global Aparentada (Ilusão de Segurança)")
     ax_acc.set_xlabel("Rodada de Treinamento")
     ax_acc.set_ylabel("Acurácia Global (%)")
-    ax_acc.set_ylim(0, 85)
-    ax_acc.legend(loc="lower right", frameon=True)
+    ax_acc.set_ylim(0, 100)
+    ax_acc.legend(loc="best", frameon=True)
 
     ax_rec.set_title("(B) Recall da Classe Vítima (Colapso Silencioso)")
     ax_rec.set_xlabel("Rodada de Treinamento")
-    ax_rec.set_ylabel("Recall da Classe Alvo (%) [Gato]")
-    ax_rec.set_ylim(-5, 85)
-    ax_rec.axhline(0, color="black", linestyle=":", alpha=0.5)
-    ax_rec.legend(loc="upper right", frameon=True)
-
-    # Anotação no gráfico de recall
-    ax_rec.text(
-        0.5, 0.45,
-        "🚨 PONTO CEGO:\nO Recall da classe vítima desaba para ~0%,\nenquanto a Acurácia Global mascara a falha!",
-        transform=ax_rec.transAxes,
-        ha="center", va="center",
-        fontsize=10, fontweight="bold", color="#B71C1C",
-        bbox=dict(boxstyle="round,pad=0.5", facecolor="#FFEBEE", edgecolor="#EF5350", alpha=0.9)
-    )
+    ax_rec.set_ylabel("Recall da Classe Vítima (%) [Gato]")
+    ax_rec.set_ylim(-5, 100)
+    ax_rec.axhline(0, color="black", linestyle=":", alpha=0.4)
+    ax_rec.legend(loc="best", frameon=True)
 
     fig.suptitle("Figura 2: O Ponto Cego sob Ataque Furtivo (Targeted Backdoor, 40%)", fontsize=14, fontweight="bold", y=0.98)
     fig.tight_layout()

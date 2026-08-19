@@ -16,11 +16,13 @@ from pytorchexample.task import Net, load_centralized_dataset, test
 app = ServerApp()
 
 # =============================================================================
-# DIRETÓRIOS PARA ORGANIZAÇÃO DOS RESULTADOS DE ATAQUES FURTIVOS
+# DIRETÓRIOS PARA ORGANIZAÇÃO DOS RESULTADOS DE ATAQUES FURTIVOS (ABSOLUTO)
 # =============================================================================
-BASE_RESULTS_DIR = "resultados_ataque_furtivo"
+_PACKAGE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_RESULTS_DIR = os.path.join(_PACKAGE_DIR, "resultados_ataque_furtivo")
 METRICS_DIR = os.path.join(BASE_RESULTS_DIR, "metrics_json")
 MODELS_DIR = os.path.join(BASE_RESULTS_DIR, "modelos")
+
 
 # Estado global temporário para auditoria por rodada
 _current_attack_type = "targeted_backdoor"

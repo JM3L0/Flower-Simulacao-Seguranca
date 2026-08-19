@@ -10,9 +10,13 @@ license = "Apache-2.0"
 dependencies = [
     "flwr[simulation]>=1.26.0",
     "flwr-datasets[vision]>=0.5.0",
-    "torch==2.8.0",
-    "torchvision==0.23.0",
+    "torch>=2.2.0",
+    "torchvision>=0.17.0",
+    "ray>=2.20.0",
+    "matplotlib>=3.7.0",
+    "numpy>=1.24.0",
 ]
+
 
 [tool.hatch.build.targets.wheel]
 packages = ["."]
@@ -35,10 +39,5 @@ dirichlet_alpha = 1.0
 defense_mode = "FedAvg"
 attack_type = "label_flipping"
 seed = 42
-
-[tool.flwr.federations.default]
-options.num-supernodes = 10
-options.backend.client-resources.num-cpus = 2
-options.backend.client-resources.num-gpus = 0.25
 
 

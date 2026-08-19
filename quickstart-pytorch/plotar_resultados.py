@@ -15,9 +15,17 @@ Uso:
 import glob
 import json
 import os
+import sys
 from collections import defaultdict
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
+
 import matplotlib.pyplot as plt  # type: ignore
 import numpy as np  # type: ignore
+
 
 # ============================================================================
 # DIRETÓRIOS E CONFIGURAÇÃO

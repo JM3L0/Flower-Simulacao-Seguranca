@@ -1,3 +1,4 @@
+
 Defesa,Ataque,Dirichlet_Alpha,Poison_Rate,Num_Trials,Acc_Global_Mean,Acc_Global_Std,Recall_Vitima_Mean,Recall_Vitima_Std,ASR_Mean,ASR_Std,CAI_Mean,CAI_Std,MRT_s
 FedAvg,targeted_backdoor,0.1,0.4,1,16.0400,0.0000,0.0000,0.0000,74.3000,0.0000,3.0000,0.0000,33.6929
 FedAvg,targeted_backdoor,0.1,0.4,1,23.2500,0.0000,30.2000,0.0000,0.0000,0.0000,0.6980,0.0000,25.7176

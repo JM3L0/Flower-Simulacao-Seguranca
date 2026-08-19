@@ -172,6 +172,7 @@ def train_with_attack(net, trainloader, epochs, lr, device, poison_rate=0.0, att
                 loss = apply_gradient_ascent(loss)
 
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(net.parameters(), max_norm=5.0)
             optimizer.step()
             
             # Usar valor absoluto no debug para não exibir log negativo que confunde

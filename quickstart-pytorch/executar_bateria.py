@@ -138,6 +138,10 @@ def simular_cenario(
             updated_state = {k: v.cpu().clone() for k, v in local_model.state_dict().items()}
             client_updates.append(updated_state)
             client_weights.append(len(loader.dataset))
+            del local_model
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
         # 2. Agregação pelo Servidor com a Defesa Selecionada
         total_samples = sum(client_weights)
@@ -293,6 +297,12 @@ def simular_cenario(
     model_filename = f"model_{strategy_name}_{attack_type}_pr{poison_rate}_da{dirichlet_alpha}_{timestamp_str}.pt"
     model_path = os.path.join(MODELS_DIR, model_filename)
     torch.save(global_model.state_dict(), model_path)
+
+    del global_model
+    del test_loader
+    del client_loaders
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
     return summary
 

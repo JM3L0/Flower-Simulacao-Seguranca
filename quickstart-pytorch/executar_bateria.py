@@ -323,28 +323,27 @@ def main():
 
     if args.modo == "teste_rapido":
         cenarios = [
-            {"defesa": "FedAvg", "ataque": "targeted_backdoor", "pr": 0.4, "alpha": 0.1, "rounds": 3, "seed": 42},
-            {"defesa": "Bulyan", "ataque": "targeted_backdoor", "pr": 0.4, "alpha": 0.1, "rounds": 3, "seed": 42},
+            {"defesa": "FedAvg", "ataque": "gaussian_noise",   "pr": 0.4, "alpha": 0.1, "rounds": args.rounds, "seed": 42},
+            {"defesa": "FedAvg", "ataque": "targeted_backdoor", "pr": 0.4, "alpha": 0.1, "rounds": args.rounds, "seed": 42},
+            {"defesa": "Bulyan", "ataque": "targeted_backdoor", "pr": 0.4, "alpha": 0.1, "rounds": args.rounds, "seed": 42},
         ]
     else:
-        # Bateria Comparativa Completa do Artigo 1
+        # Bateria Comparativa Simétrica do Artigo 1 (4 Defesas x 2 Famílias de Ataque + Controle)
         cenarios = [
-            # 1. Baseline Limpo de Controle (Sem Ataque)
-            {"defesa": "FedAvg", "ataque": "label_flipping", "pr": 0.0, "alpha": 0.1, "rounds": args.rounds, "seed": 42},
+            # 1. Controle Limpo (Sem Ataque de Envenenamento)
+            {"defesa": "FedAvg",    "ataque": "label_flipping",   "pr": 0.0, "alpha": 0.1, "rounds": args.rounds, "seed": 42},
             
-            # 2. Ataques Brutos de Controle (Ruído Gaussiano)
-            {"defesa": "FedAvg", "ataque": "gaussian_noise",  "pr": 0.4, "alpha": 0.1, "rounds": args.rounds, "seed": 42},
-            {"defesa": "Bulyan", "ataque": "gaussian_noise",  "pr": 0.4, "alpha": 0.1, "rounds": args.rounds, "seed": 42},
+            # 2. BLOCO A: Ataque Normal / Bruto (Ruído Gaussiano nas 4 Defesas)
+            {"defesa": "FedAvg",    "ataque": "gaussian_noise",    "pr": 0.4, "alpha": 0.1, "rounds": args.rounds, "seed": 42},
+            {"defesa": "FedMedian", "ataque": "gaussian_noise",    "pr": 0.4, "alpha": 0.1, "rounds": args.rounds, "seed": 42},
+            {"defesa": "Krum",      "ataque": "gaussian_noise",    "pr": 0.4, "alpha": 0.1, "rounds": args.rounds, "seed": 42},
+            {"defesa": "Bulyan",    "ataque": "gaussian_noise",    "pr": 0.4, "alpha": 0.1, "rounds": args.rounds, "seed": 42},
             
-            # 3. Ataques Furtivos: Targeted Backdoor (As 4 Defesas sob alpha=0.1)
+            # 3. BLOCO B: Ataque Furtivo (Targeted Backdoor nas 4 Defesas)
             {"defesa": "FedAvg",    "ataque": "targeted_backdoor", "pr": 0.4, "alpha": 0.1, "rounds": args.rounds, "seed": 42},
             {"defesa": "FedMedian", "ataque": "targeted_backdoor", "pr": 0.4, "alpha": 0.1, "rounds": args.rounds, "seed": 42},
             {"defesa": "Krum",      "ataque": "targeted_backdoor", "pr": 0.4, "alpha": 0.1, "rounds": args.rounds, "seed": 42},
             {"defesa": "Bulyan",    "ataque": "targeted_backdoor", "pr": 0.4, "alpha": 0.1, "rounds": args.rounds, "seed": 42},
-            
-            # 4. Ataque Furtivo: Trigger Patch Físico
-            {"defesa": "FedAvg", "ataque": "trigger_patch", "pr": 0.4, "alpha": 0.1, "rounds": args.rounds, "seed": 42},
-            {"defesa": "Bulyan", "ataque": "trigger_patch", "pr": 0.4, "alpha": 0.1, "rounds": args.rounds, "seed": 42},
         ]
 
     total = len(cenarios)

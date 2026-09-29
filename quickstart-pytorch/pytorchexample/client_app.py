@@ -4,9 +4,8 @@ import torch
 from flwr.app import ArrayRecord, Context, Message, MetricRecord, RecordDict
 from flwr.clientapp import ClientApp
 
-from pytorchexample.task import Net, load_data
+from pytorchexample.task import Net, load_data, train_with_attack
 from pytorchexample.task import test as test_fn
-from pytorchexample.task import train_with_attack
 
 # Flower ClientApp
 app = ClientApp()
@@ -41,8 +40,12 @@ def train(msg: Message, context: Context):
     )
 
 
+    # Determina se este nó é atacante de acordo com a fração Bizantina
+    num_atacantes = int(num_partitions * taxa_ataque)
+    is_malicious = partition_id < num_atacantes
+
     # =========================================================================
-    # TREINAMENTO COM ATAQUE DE ENVENENAMENTO
+    # TREINAMENTO COM CONTROLE BIZANTINO
     # =========================================================================
     train_loss, num_poisoned = train_with_attack(
         model,
@@ -50,17 +53,18 @@ def train(msg: Message, context: Context):
         context.run_config["local-epochs"],
         msg.content["config"]["lr"],
         device,
-        poison_rate=taxa_ataque,
+        poison_rate=1.0 if is_malicious else 0.0,
         attack_type=attack_type,
+        is_malicious=is_malicious,
     )
 
-    is_poisoned = 1.0 if taxa_ataque > 0.0 else 0.0
+    status_str = f"MALICIOSO ({attack_type})" if is_malicious else "HONESTO"
     print(
-        f"[Cliente {partition_id}] loss={train_loss:.4f} | "
-        f"ataque={attack_type} | "
-        f"amostras_corrompidas={num_poisoned} | "
-        f"taxa_ataque={taxa_ataque}"
+        f"[Cliente {partition_id:02d} - {status_str}] loss={train_loss:.4f} | "
+        f"amostras_corrompidas={num_poisoned}"
     )
+
+    is_poisoned = 1.0 if is_malicious else 0.0
 
     # Construct and return reply Message
     model_record = ArrayRecord(model.state_dict())

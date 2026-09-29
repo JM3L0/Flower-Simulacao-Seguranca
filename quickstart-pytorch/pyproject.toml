@@ -29,15 +29,15 @@ serverapp = "pytorchexample.server_app:app"
 clientapp = "pytorchexample.client_app:app"
 
 [tool.flwr.app.config]
-num-server-rounds = 5
+num-server-rounds = 10
 fraction-evaluate = 0.5
-local-epochs = 1
-learning-rate = 0.1
+local-epochs = 2
+learning-rate = 0.01
 batch-size = 64
-poison_rate = 0.2
-dirichlet_alpha = 1.0
+poison_rate = 0.4
+dirichlet_alpha = 0.1
 defense_mode = "FedAvg"
-attack_type = "label_flipping"
+attack_type = "targeted_backdoor"
 seed = 42
 
 

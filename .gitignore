@@ -1,1 +1,19 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ambiente e pacotes
+.venv/
+venv/
+env/
+dist/
+build/
+*.egg-info/
+
+# Ray e Flower
+.flwr/
+ray/
+
+# Documentação arquivada antiga
 documentacao/

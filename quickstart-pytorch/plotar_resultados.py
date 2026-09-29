@@ -25,7 +25,7 @@ if hasattr(sys.stderr, "reconfigure"):
 
 import matplotlib.pyplot as plt  # type: ignore
 import numpy as np  # type: ignore
-
+from pytorchexample.task import SOURCE_CLASS_DEFAULT, TARGET_CLASS_DEFAULT
 
 # ============================================================================
 # DIRETÓRIOS E CONFIGURAÇÃO VISUAL CIENTÍFICA
@@ -106,7 +106,7 @@ def consolidar_estatisticas(grupos: dict) -> list[dict]:
         strategy, attack_type, poison_rate, dirichlet_alpha, num_rounds = chave
         num_trials = len(trials)
 
-        all_rounds = sorted(list({r["round"] for t in trials for r in t.get("rounds", [])}))
+        all_rounds = sorted({r["round"] for t in trials for r in t.get("rounds", [])})
         rounds_stats = []
 
         for r_num in all_rounds:
@@ -413,8 +413,10 @@ def plotar_figura4_matrizes_confusao(cenarios: list[dict], output_dir: str):
 
         im = ax.imshow(cm_norm, interpolation="nearest", cmap="Blues", vmin=0, vmax=100)
 
-        # Destaca a célula do ataque (Classe 3 = Cat -> Classe 5 = Dog)
-        ax.add_patch(plt.Rectangle((4.5, 2.5), 1, 1, fill=False, edgecolor="red", lw=2.5, linestyle="--"))
+        # Destaca a célula do ataque alvo
+        rect_x = TARGET_CLASS_DEFAULT - 0.5
+        rect_y = SOURCE_CLASS_DEFAULT - 0.5
+        ax.add_patch(plt.Rectangle((rect_x, rect_y), 1, 1, fill=False, edgecolor="red", lw=2.5, linestyle="--"))
 
         ax.set_title(f"Defesa: {d} (ASR: {c['final_asr_mean']*100:.1f}%)", fontweight="bold", fontsize=11)
         ax.set_xticks(range(10))
@@ -425,7 +427,9 @@ def plotar_figura4_matrizes_confusao(cenarios: list[dict], output_dir: str):
         ax.set_ylabel("Classe Real", fontsize=9)
 
     fig.colorbar(im, ax=axes.ravel().tolist(), shrink=0.7, label="Taxa de Predição (%)")
-    fig.suptitle("Figura 4: Matrizes de Confusão 10x10 sob Ataque Furtivo (Targeted Backdoor)\n[Destaque Vermelho: Classe Vítima Cat -> Dog]", fontsize=13, fontweight="bold", y=0.98)
+    src_lbl = CIFAR10_CLASSES[SOURCE_CLASS_DEFAULT]
+    tgt_lbl = CIFAR10_CLASSES[TARGET_CLASS_DEFAULT]
+    fig.suptitle(f"Figura 4: Matrizes de Confusão 10x10 sob Ataque Furtivo (Targeted Backdoor)\n[Destaque Vermelho: Classe Vítima {src_lbl} -> {tgt_lbl}]", fontsize=13, fontweight="bold", y=0.98)
 
     out_path = os.path.join(output_dir, "figura4_matrizes_confusao_comparativas.png")
     fig.savefig(out_path, dpi=300, bbox_inches="tight")

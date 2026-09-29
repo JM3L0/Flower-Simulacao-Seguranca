@@ -1,6 +1,7 @@
 """Módulo contendo diferentes estratégias de ataque para federated learning."""
 
 import random
+
 import torch
 
 # =============================================================================

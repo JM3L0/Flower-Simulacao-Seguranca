@@ -3,7 +3,7 @@
 import json
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 import torch
 from flwr.app import ArrayRecord, ConfigRecord, Context, MetricRecord
@@ -32,7 +32,7 @@ _audit_records_per_round = {}
 @app.main()
 def main(grid: Grid, context: Context) -> None:
     """Main entry point for the ServerApp."""
-    global _current_attack_type, _audit_records_per_round
+    global _current_attack_type
     _audit_records_per_round.clear()
 
     # Read run config
@@ -71,18 +71,20 @@ def main(grid: Grid, context: Context) -> None:
     # =========================================================================
     # SELEÇÃO DINÂMICA DA ESTRATÉGIA DE DEFESA CONVENCIONAL
     # =========================================================================
+    num_malicious = max(1, int(10 * poison_rate)) if poison_rate > 0.0 else 0
+
     if modo_defesa == "FedMedian":
         strategy = FedMedian(fraction_evaluate=fraction_evaluate)
         print("[Defesa] Estratégia FedMedian instanciada.")
     elif modo_defesa == "Bulyan":
-        strategy = Bulyan(fraction_evaluate=fraction_evaluate)
-        print("[Defesa] Estratégia Bulyan instanciada.")
+        strategy = Bulyan(fraction_evaluate=fraction_evaluate, num_malicious_nodes=num_malicious)
+        print(f"[Defesa] Estratégia Bulyan instanciada (num_malicious_nodes={num_malicious}).")
     elif modo_defesa == "FedAvg":
         strategy = FedAvg(fraction_evaluate=fraction_evaluate)
         print("[Defesa] Estratégia FedAvg (baseline) instanciada.")
     elif modo_defesa == "Krum":
-        strategy = Krum(fraction_evaluate=fraction_evaluate, num_malicious_nodes=1)
-        print("[Defesa] Estratégia Krum instanciada.")
+        strategy = Krum(fraction_evaluate=fraction_evaluate, num_malicious_nodes=num_malicious)
+        print(f"[Defesa] Estratégia Krum instanciada (num_malicious_nodes={num_malicious}).")
     else:
         print(f"[AVISO] Estratégia '{modo_defesa}' não reconhecida. Usando FedAvg.")
         strategy = FedAvg(fraction_evaluate=fraction_evaluate)
@@ -121,7 +123,7 @@ def main(grid: Grid, context: Context) -> None:
         "seed": seed,
         "learning_rate": lr,
         "fraction_evaluate": fraction_evaluate,
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
     all_rounds_data = []
@@ -173,7 +175,7 @@ def main(grid: Grid, context: Context) -> None:
     }
 
     # Salva o arquivo JSON com nome padronizado e descritivo
-    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp_str = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     summary_filename = (
         f"metrics_{modo_defesa}_{attack_type}_pr{poison_rate}_da{dirichlet_alpha}_s{seed}_{timestamp_str}.json"
     )
@@ -184,7 +186,7 @@ def main(grid: Grid, context: Context) -> None:
 
     # Exibe o resumo final
     print("\n" + "=" * 75)
-    print(f"  RESUMO CONSOLIDADO DO EXPERIMENTO")
+    print("  RESUMO CONSOLIDADO DO EXPERIMENTO")
     print("=" * 75)
     print(f"  Defesa Avaliada:          {modo_defesa}")
     print(f"  Ataque Furtivo:           {attack_type}")
@@ -207,8 +209,6 @@ def main(grid: Grid, context: Context) -> None:
 
 def global_evaluate(server_round: int, arrays: ArrayRecord) -> MetricRecord:
     """Evaluate model on central data with granular class inspection."""
-    global _current_attack_type, _audit_records_per_round
-
     # Load the model and initialize it with the received weights
     model = Net()
     model.load_state_dict(arrays.to_torch_state_dict())

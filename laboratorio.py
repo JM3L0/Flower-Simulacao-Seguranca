@@ -13,13 +13,12 @@ O script gerencia automaticamente:
   - Arquivamento organizado dos experimentos em experimentos/
 """
 
+import importlib
 import os
 import re
 import shutil
 import subprocess
 import sys
-import time
-from datetime import datetime
 from pathlib import Path
 
 # ─── Caminhos do projeto ──────────────────────────────────────────────────────
@@ -125,38 +124,52 @@ def construir_run_config(params: dict) -> str:
             partes.append(f"{chave}={valor}")
     return " ".join(partes)
 
-def executar_run(params: dict, numero: int, total: int) -> bool:
-    """Executa um único flwr run . --stream e retorna True se bem-sucedido."""
-    run_config = construir_run_config(params)
+def executar_run(params: dict, numero: int, total: int, motor: str = "pytorch") -> bool:
+    """Executa uma simulação pelo motor selecionado (PyTorch direto ou Flower App)."""
+    if motor == "pytorch":
+        print()
+        print(c(f"  ▶  Execução {numero}/{total} (Motor PyTorch Direto)", Cor.BOLD + Cor.YELLOW))
+        print(c(f"     Configuração: {params}", Cor.GRAY))
+        separador("─", 70)
+        try:
+            if str(SRC) not in sys.path:
+                sys.path.insert(0, str(SRC))
+            mod_exec = importlib.import_module("executar_bateria")
+            mod_exec.simular_cenario(
+                strategy_name=params.get("defense_mode", "FedAvg"),
+                attack_type=params.get("attack_type", "targeted_backdoor"),
+                poison_rate=params.get("poison_rate", 0.4),
+                dirichlet_alpha=params.get("dirichlet_alpha", 0.1),
+                num_rounds=params.get("num-server-rounds", 10),
+                seed=params.get("seed", 42),
+            )
+            return True
+        except KeyboardInterrupt:
+            print(c("\n  [!] Execução interrompida pelo usuário.", Cor.RED))
+            return False
+        except (RuntimeError, ValueError, TypeError, OSError) as e:
+            print(c(f"\n  [!] Erro durante simulação: {e}", Cor.RED))
+            return False
+    else:
+        run_config = construir_run_config(params)
+        print()
+        print(c(f"  ▶  Execução {numero}/{total} (Motor Flower App)", Cor.BOLD + Cor.YELLOW))
+        print(c(f"     Configuração: {run_config}", Cor.GRAY))
+        separador("─", 70)
+        cmd = f'flwr run . --stream --run-config "{run_config}"'
+        env = os.environ.copy()
+        env["PYTHONIOENCODING"] = "utf-8"
+        try:
+            resultado = subprocess.run(cmd, shell=True, cwd=str(SRC), env=env, check=False)
+            sucesso = resultado.returncode == 0
+        except KeyboardInterrupt:
+            print(c("\n  [!] Execução interrompida pelo usuário.", Cor.RED))
+            return False
 
-    print()
-    print(c(f"  ▶  Execução {numero}/{total}", Cor.BOLD + Cor.YELLOW))
-    print(c(f"     Configuração: {run_config}", Cor.GRAY))
-    separador("─", 70)
+        if numero < total:
+            subprocess.run("ray stop", shell=True, cwd=str(SRC), capture_output=True, env=env, check=False)
 
-    cmd = f'flwr run . --stream --run-config "{run_config}"'
-
-    env = os.environ.copy()
-    env["PYTHONIOENCODING"] = "utf-8"
-
-    try:
-        resultado = subprocess.run(
-            cmd,
-            shell=True,
-            cwd=str(SRC),
-            env=env,
-        )
-        sucesso = resultado.returncode == 0
-    except KeyboardInterrupt:
-        print(c("\n  [!] Execução interrompida pelo usuário.", Cor.RED))
-        return False
-
-    if numero < total:
-        print(c("\n  → Pausa e limpeza de processos Ray...", Cor.GRAY))
-        subprocess.run("ray stop", shell=True, cwd=str(SRC), capture_output=True, env=env)
-        time.sleep(3)
-
-    return sucesso
+        return sucesso
 
 def gerar_graficos():
     """Executa plotar_resultados.py dentro de quickstart-pytorch/."""
@@ -169,6 +182,7 @@ def gerar_graficos():
         shell=True,
         cwd=str(SRC),
         env=env,
+        check=False,
     )
     if resultado.returncode == 0:
         print(c("  ✔  Figuras científicas e tabelas estatísticas geradas.", Cor.GREEN))
@@ -204,7 +218,7 @@ def arquivar_resultados(nome_descritivo: str):
     print()
     print(c(f"  ✔  Resultados arquivados em: experimentos/{pasta.name}/", Cor.GREEN))
     print(c(f"     {len(jsons)} JSON(s) movidos para dados/", Cor.GRAY))
-    print(c(f"     Figuras salvas em graficos/", Cor.GRAY))
+    print(c("     Figuras salvas em graficos/", Cor.GRAY))
     return pasta
 
 def confirmar(mensagem: str) -> bool:
@@ -226,10 +240,16 @@ def executar_lote(runs: list[dict], nome_lote: str):
         print(c("  Cancelado.", Cor.GRAY))
         return
 
+    print(c("\n  Motor de Execução:", Cor.CYAN))
+    print("    [1] Motor PyTorch Direto (Recomendado: rápido, sem overhead de Ray, GPU)")
+    print("    [2] Motor Flower App (flwr run --stream)")
+    motor_escolha = input(c("  Escolha o motor [1/2, padrão 1]: ", Cor.YELLOW)).strip() or "1"
+    motor = "pytorch" if motor_escolha == "1" else "flower"
+
     print()
     sucessos = 0
     for i, params in enumerate(runs, start=1):
-        ok = executar_run(params, i, total)
+        ok = executar_run(params, i, total, motor=motor)
         if ok:
             sucessos += 1
 

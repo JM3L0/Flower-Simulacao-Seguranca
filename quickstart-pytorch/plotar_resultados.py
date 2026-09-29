@@ -150,6 +150,14 @@ def consolidar_estatisticas(grupos: dict) -> list[dict]:
             categoria = "Ataque Furtivo"
             nome_legenda = strategy
 
+        # Média de acurácia por classe individual (10 classes do CIFAR-10)
+        per_class_trials = [t.get("final_per_class_accuracy", {}) for t in trials if t.get("final_per_class_accuracy")]
+        per_class_mean = {}
+        if per_class_trials:
+            for cls in CIFAR10_CLASSES:
+                vals = [p.get(cls.lower(), p.get(cls, 0.0)) for p in per_class_trials]
+                per_class_mean[cls] = float(np.mean(vals)) * 100
+
         cenarios_consolidados.append({
             "chave": chave,
             "label": label,
@@ -172,6 +180,7 @@ def consolidar_estatisticas(grupos: dict) -> list[dict]:
             "cai_mean": float(np.mean(cai_values)) if cai_values else 0.0,
             "cai_std": float(np.std(cai_values)) if len(cai_values) > 1 else 0.0,
             "cm_mean": cm_mean,
+            "per_class_mean": per_class_mean,
         })
 
     return cenarios_consolidados
@@ -225,16 +234,22 @@ def plotar_figura1_ataque_normal(cenarios: list[dict], output_dir: str):
             ax_loss.fill_between(rounds, np.maximum(np.array(loss_means) - np.array(loss_stds), 0),
                                  np.array(loss_means) + np.array(loss_stds), color=color, alpha=0.15)
 
+    for ax in [ax_acc, ax_loss]:
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.grid(axis="y", linestyle="--", alpha=0.3)
+        ax.grid(axis="x", visible=False)
+
     ax_acc.set_title("(A) Acurácia Global sob Ataque Normal (Ruído)")
     ax_acc.set_xlabel("Rodada de Treinamento")
     ax_acc.set_ylabel("Acurácia Global (%)")
     ax_acc.set_ylim(0, 100)
-    ax_acc.legend(loc="best", frameon=True)
+    ax_acc.legend(loc="best", frameon=False)
 
     ax_loss.set_title("(B) Evolução da Perda (Loss) Global")
     ax_loss.set_xlabel("Rodada de Treinamento")
     ax_loss.set_ylabel("Cross-Entropy Loss")
-    ax_loss.legend(loc="best", frameon=True)
+    ax_loss.legend(loc="best", frameon=False)
 
     fig.suptitle("Figura 1: Resiliência das Defesas Convencionais contra Ataque Normal (Ruído Gaussiano, 40%)", fontsize=14, fontweight="bold", y=0.98)
     fig.tight_layout()
@@ -294,18 +309,24 @@ def plotar_figura2_ataque_furtivo(cenarios: list[dict], output_dir: str):
             ax_rec.fill_between(rounds, np.clip(np.array(rec_means) - np.array(rec_stds), 0, 100),
                                 np.clip(np.array(rec_means) + np.array(rec_stds), 0, 100), color=color, alpha=0.15)
 
+    for ax in [ax_acc, ax_rec]:
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.grid(axis="y", linestyle="--", alpha=0.3)
+        ax.grid(axis="x", visible=False)
+
     ax_acc.set_title("(A) Acurácia Global Aparentada (Ilusão de Segurança)")
     ax_acc.set_xlabel("Rodada de Treinamento")
     ax_acc.set_ylabel("Acurácia Global (%)")
     ax_acc.set_ylim(0, 100)
-    ax_acc.legend(loc="best", frameon=True)
+    ax_acc.legend(loc="best", frameon=False)
 
     ax_rec.set_title("(B) Recall da Classe Vítima (Colapso Silencioso)")
     ax_rec.set_xlabel("Rodada de Treinamento")
     ax_rec.set_ylabel("Recall da Classe Vítima (%) [Gato]")
     ax_rec.set_ylim(-5, 100)
     ax_rec.axhline(0, color="black", linestyle=":", alpha=0.4)
-    ax_rec.legend(loc="best", frameon=True)
+    ax_rec.legend(loc="best", frameon=False)
 
     fig.suptitle("Figura 2: O Ponto Cego sob Ataque Furtivo (Targeted Backdoor, 40%)", fontsize=14, fontweight="bold", y=0.98)
     fig.tight_layout()
@@ -437,6 +458,89 @@ def plotar_figura4_matrizes_confusao(cenarios: list[dict], output_dir: str):
     print(f"  [✓] Figura 4 salva: {out_path}")
 
 
+def plotar_figura5_raiox_classes(cenarios: list[dict], output_dir: str):
+    """
+    FIGURA 5: Raio-X das 10 Classes do CIFAR-10 sob Ataque Furtivo (O Buraco do Ponto Cego).
+    Exibe a acurácia individual de cada uma das 10 classes no modelo final.
+    Mostra as classes saudáveis em tom azul e a classe vítima ('Cat') colapsada em vermelho vivo.
+    """
+    furtivos = [c for c in cenarios if c["attack_type"] == "targeted_backdoor"]
+    if not furtivos:
+        return
+
+    defesas_presentes = [d for d in ["FedAvg", "FedMedian", "Krum", "Bulyan"] if any(c["strategy"] == d for c in furtivos)]
+    if not defesas_presentes:
+        return
+
+    # Prioriza FedAvg e Bulyan para contraste claro, ou plota as presentes
+    if len(defesas_presentes) > 2:
+        defesas_alvo = ["FedAvg", "Bulyan"] if "Bulyan" in defesas_presentes and "FedAvg" in defesas_presentes else defesas_presentes[:2]
+    else:
+        defesas_alvo = defesas_presentes
+
+    fig, axes = plt.subplots(1, len(defesas_alvo), figsize=(7.5 * len(defesas_alvo), 6), squeeze=False)
+    src_idx = SOURCE_CLASS_DEFAULT
+    src_cls_name = CIFAR10_CLASSES[src_idx]
+
+    for col_idx, d in enumerate(defesas_alvo):
+        ax = axes[0, col_idx]
+        c = next(c for c in furtivos if c["strategy"] == d)
+        per_class = c.get("per_class_mean", {})
+        if not per_class:
+            continue
+
+        acc_values = [per_class.get(cls, 0.0) for cls in CIFAR10_CLASSES]
+        cores = ["#D32F2F" if i == src_idx else "#1976D2" for i in range(len(CIFAR10_CLASSES))]
+
+        y_pos = np.arange(len(CIFAR10_CLASSES))
+        bars = ax.barh(y_pos, acc_values, color=cores, edgecolor="black", height=0.62, alpha=0.85)
+
+        for i, (bar, val) in enumerate(zip(bars, acc_values)):
+            if i == src_idx:
+                ax.annotate(
+                    f" 🚨 PONTO CEGO ({val:.1f}%)",
+                    xy=(val, y_pos[i]),
+                    xytext=(val + 2, y_pos[i]),
+                    va="center",
+                    fontsize=9.5,
+                    fontweight="bold",
+                    color="#D32F2F",
+                )
+            else:
+                ax.annotate(
+                    f" {val:.1f}%",
+                    xy=(val, y_pos[i]),
+                    xytext=(val + 1, y_pos[i]),
+                    va="center",
+                    fontsize=9,
+                    color="#333333",
+                )
+
+        ax.set_yticks(y_pos)
+        ax.set_yticklabels(CIFAR10_CLASSES, fontsize=10, fontweight="bold")
+        ax.set_xlabel("Acurácia por Classe (%)", fontsize=11, fontweight="bold")
+        ax.set_xlim(0, 118)
+        ax.set_title(f"Defesa: {d} (Acurácia Global: {c['final_acc_mean']*100:.1f}%)", fontsize=12, fontweight="bold")
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.grid(axis="x", linestyle="--", alpha=0.3)
+        ax.grid(axis="y", visible=False)
+        ax.invert_yaxis()
+
+    fig.suptitle(
+        f"Figura 5: Raio-X Anatômico das 10 Classes — Evidência do Ponto Cego na Classe Vítima ({src_cls_name})",
+        fontsize=13,
+        fontweight="bold",
+        y=0.98,
+    )
+    fig.tight_layout()
+
+    out_path = os.path.join(output_dir, "figura5_raiox_classes_ponto_cego.png")
+    fig.savefig(out_path, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  [✓] Figura 5 salva: {out_path}")
+
+
 # ============================================================================
 # GERADOR DE TABELAS FORMATADAS
 # ============================================================================
@@ -520,11 +624,12 @@ def main():
     cenarios = consolidar_estatisticas(grupos)
     print(f"  Total de cenários consolidados: {len(cenarios)}")
 
-    print("\n  Gerando as 4 Figuras Científicas do Artigo...")
+    print("\n  Gerando as 5 Figuras Científicas do Artigo...")
     plotar_figura1_ataque_normal(cenarios, OUTPUT_DIR)
     plotar_figura2_ataque_furtivo(cenarios, OUTPUT_DIR)
     plotar_figura3_resumo_barras(cenarios, OUTPUT_DIR)
     plotar_figura4_matrizes_confusao(cenarios, OUTPUT_DIR)
+    plotar_figura5_raiox_classes(cenarios, OUTPUT_DIR)
     gerar_tabela_resumo_estatistico(cenarios, BASE_RESULTS_DIR)
 
     print("\n" + "=" * 78)

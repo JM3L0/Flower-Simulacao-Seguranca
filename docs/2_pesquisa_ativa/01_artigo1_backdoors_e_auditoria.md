@@ -70,57 +70,69 @@ O objetivo central do Artigo 1 é conduzir um **estudo empírico rigoroso sobre 
 
 ## 📖 4. Fundamentação Teórica: Por que as Defesas Convencionais Falham?
 
-1. **A Natureza dos Ataques Furtivos**:
-   * Em ataques brutos (`gradient_ascent`, `gaussian_noise`), todas as coordenadas dos tensores são alteradas, fazendo a distância euclidiana explodir e facilitando a filtragem por Krum/Bulyan.
-   * Em ataques furtivos (`targeted_backdoor`, `trigger_patch`), apenas os neurônios associados à classe vítima sofrem perturbações sutis. A distância euclidiana global $\|w_i - \bar{w}\|_2$ permanece próxima à dos clientes honestos.
+A fundamentação científica do Artigo 1 se sustenta em **quatro pilares conceituais fundamentais de Aprendizado Federado**:
 
-2. **O Impacto da Assimetria Non-IID ($\alpha = 0.1$)**:
-   * Clientes legítimos que possuem predominantemente classes raras geram gradientes naturalmente divergentes da média.
-   * As defesas geométricas (`Krum`, `Bulyan`) não conseguem distinguir entre um cliente honesto especializado e um atacante, gerando **descarte indevido de dados legítimos (*falsos positivos*)** e aceitando gradientes maliciosos.
+### 4.1. A Matemática do Engano (A "Regra dos 90%")
+* Em classificadores balanceados de 10 classes (como o CIFAR-10, onde cada classe representa $10\%$ do conjunto de teste), a **Acurácia Global Agregada (Macro Accuracy)** mascara naturalmente ataques direcionados.
+* Se um ataque direcionado (*targeted backdoor*) aniquilar **100%** do recall da classe vítima (reduzindo-o a $0\%$), a Acurácia Global do modelo sofrerá uma penalidade aritmética de **no máximo 10 pontos percentuais**.
+* Consequentemente, um modelo global que atinge $55\%$ em regime limpo continuará reportando cerca de **$45\%$ a $50\%$ sob ataque total**, gerando uma falsa sensação de convergência saudável enquanto uma funcionalidade crítica foi completamente sabotada.
+
+### 4.2. A Heterogeneidade Non-IID ($\alpha = 0.1$) como "Camuflagem Estatística"
+* **Em Regime IID ($\alpha = 100.0$):** Todos os clientes honestos amostram distribuições semelhantes. Seus gradientes convergem para uma vizinhança esférica compacta no espaço de parâmetros, facilitando a identificação de anomalias por métricas de distância.
+* **Em Regime Non-IID Extremo ($\alpha = 0.1$):** Cada cliente honesto possui distribuições assimétricas severas (ex: um cliente possui apenas pássaros e cavalos; outro, apenas carros). Os gradientes dos nós honestos estão **naturalmente dispersos e distantes uns dos outros**.
+* **A Falha Geométrica:** Quando o atacante submete a atualização envenenada, a perturbação nos pesos cai **dentro da variabilidade legítima da rede**. Defesas baseadas em distância Euclidiana ($L_2$) como o `Krum` e `Bulyan` não conseguem discernir um gradiente envenenado de um cliente honesto altamente especializado, descartando dados legítimos (*falsos positivos*) e agregando o veneno.
+
+### 4.3. Limiares Teóricos Bizantinos ($f$ vs $n$)
+As garantias clássicas de resiliência da literatura foram formuladas para perturbações descorrelacionadas ou ataques de força bruta:
+* **Krum (Blanch et al.):** Exige formalmente que $n \ge 2f + 3$. Para uma federação de $n=10$ clientes, o Krum tolera no máximo **$f=3$ atacantes** ($30\%$).
+* **Bulyan (Guerraoui et al.):** Exige formalmente que $n \ge 4f + 3$. Para $n=10$ clientes, o Bulyan tolera no máximo **$f=1$ atacante** ($10\%$).
+* **FedMedian (Yin et al.):** Tolera assintoticamente até $f < n/2$ ($<50\%$). Para $n=10$, suporta até $f=4$ atacantes ($40\%$).
+* **O Achado do Artigo 1:** Mesmo em cenários onde defesas como o `FedMedian` possuem a maioria honesta matemática necessária ($60\%$ honestos vs. $40\%$ atacantes), a coordenação semântica do backdoor neutraliza a filtragem mediana por coordenada, provando que maiorias honestas são insuficientes contra ataques semânticos em dados Não-IID.
+
+### 4.4. Ataque Contínuo vs. Esquecimento Catastrófico (*Catastrophic Forgetting*)
+* Em sistemas federados, backdoors sofrem naturalmente de atenuação (*catastrophic forgetting*) caso os nós honestos sobreponham os pesos sem o veneno ao longo das rodadas.
+* No nosso modelo de ameaça, os nós maliciosos participam continuamente em todas as rodadas de comunicação federada. Isso consolida o padrão de backdoor nos pesos profundos da rede, atingindo taxas de sucesso de ataque (**ASR $\ge 90\%$**) sem a necessidade de fatores de escala agressivos (*model replacement / weight boosting*), que seriam facilmente barrados por checagens de norma de gradiente.
 
 ---
 
-## 🧪 5. Perguntas de Investigação (RQs) e Bateria de Experimentos
+## 🧪 5. Perguntas de Investigação (RQs) e Estrutura Experimental
 
 ### Perguntas de Pesquisa:
-* **RQ1 (Vulnerabilidade das Defesas)**: Em que intensidade cada defesa convencional (`FedAvg`, `FedMedian`, `Krum`, `Bulyan`) é vulnerável à injeção de backdoors direcionados?
-* **RQ2 (Magnitude do Ponto Cego)**: Qual a discrepância numérica entre o que a Acurácia Global reporta versus a destruição sofrida no Recall da classe vítima?
-* **RQ3 (Efeito da Heterogeneidade Non-IID)**: Como a transição de um cenário IID ($\alpha = 100.0$) para Non-IID extremo ($\alpha = 0.1$) afeta a taxa de sucesso do ataque furtivo (*ASR*) nas defesas convencionais?
-* **RQ4 (Custo Computacional vs. Eficácia)**: O overhead computacional de algoritmos mais pesados como o `Bulyan` se traduz em proteção efetiva contra ataques furtivos?
+* **RQ1 (Vulnerabilidade das Defesas)**: Em que intensidade as defesas convencionais (`FedAvg`, `FedMedian`, `Krum`, `Bulyan`) falham em conter backdoors direcionados sob dados Não-IID ($\alpha=0.1$)?
+* **RQ2 (Magnitude do Ponto Cego)**: Qual a discrepância numérica entre a Acurácia Global reportada no servidor versus o colapso sofrido no Recall da classe vítima?
+* **RQ3 (Efeito da Heterogeneidade Non-IID)**: Como a transição entre IID ($\alpha = 100.0$) e Non-IID extremo ($\alpha = 0.1$) atua como catalisador da camuflagem do ataque furtivo?
+* **RQ4 (Custo Computacional vs. Eficácia Real)**: O overhead de agregação de métodos sofisticados como o `Bulyan` se traduz em proteção efetiva contra ameaças semânticas?
 
-### Bateria dos Experimentos:
-```powershell
-$env:PYTHONIOENCODING="utf-8"
+### Execução dos Experimentos:
+Os experimentos são executados de forma direta e reprodutível na GPU T4 via Google Colab (`executar_no_colab.ipynb`) ou localmente via `executar_bateria.py`:
 
-# 1. Baseline de Vulnerabilidade (FedAvg sob Targeted Backdoor em IID)
-flwr run . --stream --run-config "defense_mode='FedAvg' attack_type='targeted_backdoor' poison_rate=0.4 dirichlet_alpha=100.0 num-server-rounds=10"
+```bash
+# Execução da Bateria Completa Oficial (9 cenários do Artigo 1):
+python quickstart-pytorch/executar_bateria.py --modo artigo1_completo --rounds 15
 
-# 2. Avaliação de Defesas Geométricas em Regime IID (Krum e Bulyan sob alpha=100.0)
-flwr run . --stream --run-config "defense_mode='Krum' attack_type='targeted_backdoor' poison_rate=0.4 dirichlet_alpha=100.0 num-server-rounds=10"
-flwr run . --stream --run-config "defense_mode='Bulyan' attack_type='targeted_backdoor' poison_rate=0.4 dirichlet_alpha=100.0 num-server-rounds=10"
+# Execução Seletiva do Bloco Furtivo (4 defesas sob targeted_backdoor):
+python quickstart-pytorch/executar_bateria.py --modo artigo1_furtivo --rounds 15
 
-# 3. Degradação sob Assimetria Realista Non-IID (Krum e Bulyan sob alpha=0.1)
-flwr run . --stream --run-config "defense_mode='Krum' attack_type='targeted_backdoor' poison_rate=0.4 dirichlet_alpha=0.1 num-server-rounds=10"
-flwr run . --stream --run-config "defense_mode='Bulyan' attack_type='targeted_backdoor' poison_rate=0.4 dirichlet_alpha=0.1 num-server-rounds=10"
-
-# 4. Avaliação Comparativa sob Ataque por Gatilho Físico (Trigger Patch em FedAvg vs Bulyan)
-flwr run . --stream --run-config "defense_mode='FedAvg' attack_type='trigger_patch' poison_rate=0.4 dirichlet_alpha=0.1 num-server-rounds=10"
-flwr run . --stream --run-config "defense_mode='Bulyan' attack_type='trigger_patch' poison_rate=0.4 dirichlet_alpha=0.1 num-server-rounds=10"
+# Execução Customizada para Estudos de Ablação (Ex: Bulyan em Non-IID vs IID):
+python quickstart-pytorch/executar_bateria.py --defesa Bulyan --ataque targeted_backdoor --poison_rate 0.4 --alpha 0.1 --rounds 15
 ```
 
 ---
 
 ## 📊 6. Figuras Científicas e Entregáveis do Manuscrito
 
-### Figuras do Artigo:
-1. **Figura 1 (Curva Temporal de Divergência)**: Gráfico de linhas com Acurácia Global (aparentando ~90%) vs. Recall da Classe Alvo (despencando para 0%) nas defesas convencionais.
-2. **Figura 2 (Painel de Matrizes de Confusão)**: Painel comparativo de Heatmaps $10 \times 10$ revelando o desvio concentrado de predições da classe vítima sob cada defesa.
-3. **Figura 3 (Impacto do Dirichlet no ASR)**: Gráfico de barras demonstrando a variação da Taxa de Sucesso do Ataque entre IID ($\alpha=100$) e Non-IID ($\alpha=0.1$).
-4. **Tabela 1 (Benchmark Consolidado)**: Tabela com Acurácia Global, Recall da Classe Vítima, ASR e Tempo Médio de Rodada (MRT em segundos).
+As figuras do artigo seguem rigorosamente o **padrão estético acadêmico clean/despined** (fundo branco, sem bordas superior e direita, marcadores suaves e tipografia sem serifa de alta legibilidade):
 
-### Estimativa de Esforço:
-* **Dificuldade Técnica**: **Baixa a Média (Nota 3 / 10)**.
-* **Repositório Atual**: **85% Concluído**.
-* **Tempo Direto do Pesquisador**: **~3 a 5 horas** (coleta de métricas por classe no logger/JSON, geração dos gráficos e análise).
-* **Tempo de Computador**: ~3 horas de execução autônoma das simulações.
-* **Tempo para Redação**: 1 a 2 semanas.
+1. **Figura 1 — A Ilusão vs. A Realidade (Curvas Temporais Sincronizadas em Estilo Despined)**:
+   * **Painel (A) — A Ilusão:** As curvas de **Acurácia Global** de `FedAvg`, `FedMedian`, `Krum` e `Bulyan` convergindo suavemente em curva S até **$55-60\%$** ao longo das rodadas (sugerindo que a rede está saudável).
+   * **Painel (B) — A Realidade:** O **Recall da Classe Vítima (Gato)** despencando paralelamente para **$<3\%$** em todas as 4 defesas (ou a curva de **ASR** escalando até $95\%$). Revela a contradição central do Ponto Cego.
+2. **Figura 2 — O Raio-X das 10 Classes (O Buraco do Ponto Cego no Modelo Final)**:
+   * Gráfico de barras avaliando a acurácia individual de cada uma das 10 classes do CIFAR-10 na rodada final.
+   * **9 classes saudáveis** em tom azul sóbrio (todas acima de $55\%$).
+   * **1 classe vítima (Gato)** em vermelho vivo colapsada em $<3\%$, com anotação visual destacando a invasão silenciosa.
+3. **Figura 3 — Resiliência Comparativa (Ataque Normal vs. Ataque Furtivo)**:
+   * Comparativo em barras agrupadas demonstrando que o Ataque Bruto (Ruído Gaussiano) derruba a acurácia para $10\%$ (alarme evidente), enquanto o Ataque Furtivo preserva a acurácia global alta.
+4. **Figura 4 — Grid 2x2 de Matrizes de Confusão 10x10**:
+   * Heatmaps normalizados para `FedAvg`, `FedMedian`, `Krum` e `Bulyan`, evidenciando a coluna de desvio para a classe alvo (Cachorro).
+5. **Tabela 1 — Benchmark Estatístico Consolidado**:
+   * Tabela comparando Acurácia Final, Recall da Vítima, ASR, Perda (Loss) e MRT (Mean Round Time em segundos) para cada estratégia.

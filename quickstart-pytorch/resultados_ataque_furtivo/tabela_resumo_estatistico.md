@@ -1,6 +1,13 @@
-# 📊 Tabela Resumo Estatístico dos Experimentos
+# 📊 Tabela Resumo Estatístico dos Experimentos (Artigo 1)
 
-| Defesa | Ataque | Dirichlet (α) | Taxa (PR) | Trials (N) | Acurácia Global Final (%) | Recall Classe Vítima (%) | ASR Final (%) | CAI (Impacto Acumulado) | MRT (s/rodada) |
-|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **FedAvg** | `targeted_backdoor` | 0.1 | 0.4 | 1 | 16.04% | 0.00% | 74.30% | 3.00 | 33.69 s |
-| **FedAvg** | `targeted_backdoor` | 0.1 | 0.4 | 1 | 23.25% | 30.20% | 0.00% | 0.70 | 25.72 s |
+| Categoria | Defesa | Ataque | PR (%) | Acurácia Global Final (%) | Recall Vítima (%) | ASR Final (%) | MRT (s/rod) |
+|---|---|---|:---:|:---:|:---:|:---:|:---:|
+| Controle Limpo | **FedAvg** | `label_flipping` | 0% | 42.57% | 53.50% | 0.00% | 28.94 s |
+| Ataque Normal | **Bulyan** | `gaussian_noise` | 40% | 11.43% | 16.40% | 0.00% | 31.62 s |
+| Ataque Normal | **FedAvg** | `gaussian_noise` | 40% | 36.46% | 56.40% | 0.00% | 31.44 s |
+| Ataque Normal | **FedMedian** | `gaussian_noise` | 40% | 19.29% | 43.90% | 0.00% | 31.34 s |
+| Ataque Normal | **Krum** | `gaussian_noise` | 40% | 10.00% | 0.00% | 0.00% | 31.47 s |
+| Ataque Furtivo | **Bulyan** | `targeted_backdoor` | 40% | 28.41% | 0.00% | 54.70% | 29.14 s |
+| Ataque Furtivo | **FedAvg** | `targeted_backdoor` | 40% | 43.18% | 0.50% | 42.10% | 29.19 s |
+| Ataque Furtivo | **FedMedian** | `targeted_backdoor` | 40% | 26.40% | 0.00% | 41.30% | 29.29 s |
+| Ataque Furtivo | **Krum** | `targeted_backdoor` | 40% | 10.00% | 0.00% | 0.00% | 29.42 s |

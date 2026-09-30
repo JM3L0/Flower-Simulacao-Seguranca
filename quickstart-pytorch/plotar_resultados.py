@@ -210,7 +210,7 @@ def plotar_figura1_ataque_normal(cenarios: list[dict], output_dir: str):
         c_list = [c for c in normais if c["nome_legenda"] == def_nome or (def_nome == "Baseline (Sem Ataque)" and c["poison_rate"] == 0.0)]
         if not c_list:
             continue
-        c = c_list[0]
+        c = max(c_list, key=lambda x: (len(x.get("rounds_stats", [])), x.get("num_server_rounds", 0)))
 
         color = DEFENSE_COLORS.get(def_nome, "#555555")
         marker = DEFENSE_MARKERS.get(def_nome, "o")
@@ -279,13 +279,13 @@ def plotar_figura2_ataque_furtivo(cenarios: list[dict], output_dir: str):
         if def_nome == "Baseline (Sem Ataque)":
             if not baseline:
                 continue
-            c = baseline[0]
+            c = max(baseline, key=lambda x: (len(x.get("rounds_stats", [])), x.get("num_server_rounds", 0)))
             linestyle = "--"
         else:
             c_list = [c for c in furtivos if c["strategy"] == def_nome]
             if not c_list:
                 continue
-            c = c_list[0]
+            c = max(c_list, key=lambda x: (len(x.get("rounds_stats", [])), x.get("num_server_rounds", 0)))
             linestyle = "-"
 
         color = DEFENSE_COLORS.get(def_nome, "#555555")
@@ -353,9 +353,12 @@ def plotar_figura3_resumo_barras(cenarios: list[dict], output_dir: str):
         cn = [c for c in cenarios if c["strategy"] == d and c["attack_type"] == "gaussian_noise"]
         cf = [c for c in cenarios if c["strategy"] == d and c["attack_type"] == "targeted_backdoor"]
         
-        acc_normal.append(cn[0]["final_acc_mean"] * 100 if cn else 0.0)
-        acc_furtivo.append(cf[0]["final_acc_mean"] * 100 if cf else 0.0)
-        asr_furtivo.append(cf[0]["final_asr_mean"] * 100 if cf else 0.0)
+        best_cn = max(cn, key=lambda x: (len(x.get("rounds_stats", [])), x.get("num_server_rounds", 0))) if cn else None
+        best_cf = max(cf, key=lambda x: (len(x.get("rounds_stats", [])), x.get("num_server_rounds", 0))) if cf else None
+
+        acc_normal.append(best_cn["final_acc_mean"] * 100 if best_cn else 0.0)
+        acc_furtivo.append(best_cf["final_acc_mean"] * 100 if best_cf else 0.0)
+        asr_furtivo.append(best_cf["final_asr_mean"] * 100 if best_cf else 0.0)
 
     x = np.arange(len(defesas))
     width = 0.35
@@ -420,12 +423,12 @@ def plotar_figura4_matrizes_confusao(cenarios: list[dict], output_dir: str):
 
     for idx, d in enumerate(defesas):
         ax = axes_flat[idx]
-        c_list = [c for c in furtivos if c["strategy"] == d]
-        if not c_list or c_list[0].get("cm_mean") is None:
+        c_list = [c for c in furtivos if c["strategy"] == d and c.get("cm_mean") is not None]
+        if not c_list:
             ax.text(0.5, 0.5, f"Dados não disponíveis\npara {d}", ha="center", va="center")
             continue
 
-        c = c_list[0]
+        c = max(c_list, key=lambda x: (len(x.get("rounds_stats", [])), x.get("num_server_rounds", 0)))
         cm = np.array(c["cm_mean"])
         
         # Normaliza por linha (recall por classe)
@@ -484,7 +487,10 @@ def plotar_figura5_raiox_classes(cenarios: list[dict], output_dir: str):
 
     for col_idx, d in enumerate(defesas_alvo):
         ax = axes[0, col_idx]
-        c = next(c for c in furtivos if c["strategy"] == d)
+        c_candidates = [c for c in furtivos if c["strategy"] == d and c.get("per_class_mean")]
+        if not c_candidates:
+            continue
+        c = max(c_candidates, key=lambda x: (len(x.get("rounds_stats", [])), x.get("num_server_rounds", 0)))
         per_class = c.get("per_class_mean", {})
         if not per_class:
             continue
@@ -498,7 +504,7 @@ def plotar_figura5_raiox_classes(cenarios: list[dict], output_dir: str):
         for i, (bar, val) in enumerate(zip(bars, acc_values)):
             if i == src_idx:
                 ax.annotate(
-                    f" 🚨 PONTO CEGO ({val:.1f}%)",
+                    f" [!] PONTO CEGO ({val:.1f}%)",
                     xy=(val, y_pos[i]),
                     xytext=(val + 2, y_pos[i]),
                     va="center",
@@ -558,9 +564,17 @@ def gerar_tabela_resumo_estatistico(cenarios: list[dict], output_base: str):
         "Categoria,Defesa,Ataque,Dirichlet_Alpha,Poison_Rate,Num_Trials,Acc_Global_Final,Recall_Vitima_Final,ASR_Final,MRT_s"
     ]
 
+    # Deduplica cenários caso haja corridas incompletas e completas com mesmos hiperparâmetros
+    melhores_por_chave = {}
+    for c in cenarios:
+        sub_chave = (c["strategy"], c["attack_type"], c["poison_rate"], c["dirichlet_alpha"])
+        if sub_chave not in melhores_por_chave or len(c.get("rounds_stats", [])) > len(melhores_por_chave[sub_chave].get("rounds_stats", [])):
+            melhores_por_chave[sub_chave] = c
+    cenarios_unicos = list(melhores_por_chave.values())
+
     # Ordena por Categoria e Defesa
     ordem_cat = {"Controle Limpo": 0, "Ataque Normal": 1, "Ataque Furtivo": 2}
-    cenarios_ordenados = sorted(cenarios, key=lambda c: (ordem_cat.get(c["categoria"], 9), c["strategy"]))
+    cenarios_ordenados = sorted(cenarios_unicos, key=lambda c: (ordem_cat.get(c["categoria"], 9), c["strategy"]))
 
     for c in cenarios_ordenados:
         n = c["num_trials"]

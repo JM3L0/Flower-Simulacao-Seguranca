@@ -68,13 +68,25 @@ CENARIOS_ARTIGO1: list[dict[str, Any]] = [
     {"strategy_name": "Bulyan", "attack_type": "targeted_backdoor", "poison_rate": 0.4, "dirichlet_alpha": 0.1, "seed": 42},
 ]
 
-# Sub-blocos temáticos do Artigo 1 para execução seletiva
+# Sub-blocos temáticos do Artigo 1 para execução seletiva (sempre incluindo o baseline de controle limpo)
 CENARIOS_ARTIGO1_FURTIVO: list[dict[str, Any]] = [
-    c for c in CENARIOS_ARTIGO1 if c["attack_type"] == "targeted_backdoor"
+    # 1. Baseline de Controle (Sem Envenenamento)
+    {"strategy_name": "FedAvg", "attack_type": "label_flipping", "poison_rate": 0.0, "dirichlet_alpha": 0.1, "seed": 42},
+    # 2. As 4 Defesas sob Ataque Furtivo (Targeted Backdoor)
+    {"strategy_name": "FedAvg", "attack_type": "targeted_backdoor", "poison_rate": 0.4, "dirichlet_alpha": 0.1, "seed": 42},
+    {"strategy_name": "FedMedian", "attack_type": "targeted_backdoor", "poison_rate": 0.4, "dirichlet_alpha": 0.1, "seed": 42},
+    {"strategy_name": "Krum", "attack_type": "targeted_backdoor", "poison_rate": 0.4, "dirichlet_alpha": 0.1, "seed": 42},
+    {"strategy_name": "Bulyan", "attack_type": "targeted_backdoor", "poison_rate": 0.4, "dirichlet_alpha": 0.1, "seed": 42},
 ]
 
 CENARIOS_ARTIGO1_BRUTO: list[dict[str, Any]] = [
-    c for c in CENARIOS_ARTIGO1 if c["attack_type"] == "gaussian_noise"
+    # 1. Baseline de Controle (Sem Envenenamento)
+    {"strategy_name": "FedAvg", "attack_type": "label_flipping", "poison_rate": 0.0, "dirichlet_alpha": 0.1, "seed": 42},
+    # 2. As 4 Defesas sob Ruído Gaussiano
+    {"strategy_name": "FedAvg", "attack_type": "gaussian_noise", "poison_rate": 0.4, "dirichlet_alpha": 0.1, "seed": 42},
+    {"strategy_name": "FedMedian", "attack_type": "gaussian_noise", "poison_rate": 0.4, "dirichlet_alpha": 0.1, "seed": 42},
+    {"strategy_name": "Krum", "attack_type": "gaussian_noise", "poison_rate": 0.4, "dirichlet_alpha": 0.1, "seed": 42},
+    {"strategy_name": "Bulyan", "attack_type": "gaussian_noise", "poison_rate": 0.4, "dirichlet_alpha": 0.1, "seed": 42},
 ]
 
 
@@ -299,6 +311,139 @@ def simular_cenario(
     return summary
 
 
+def _gerar_relatorio_diretrizes_txt(
+    results_dir: str,
+    modo: str,
+    rounds: int,
+    cenarios: list[dict[str, Any]],
+    resultados: list[dict[str, Any]],
+    overrides: dict[str, Any] | None = None,
+) -> str:
+    """Gera um arquivo TXT estruturado e legível detalhando diretrizes e configurações da sessão."""
+    txt_path = os.path.join(results_dir, "DIRETRIZES_DO_EXPERIMENTO.txt")
+    agora_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    dispositivo = (
+        f"CUDA GPU ({torch.cuda.get_device_name(0)})"
+        if torch.cuda.is_available()
+        else "CPU"
+    )
+
+    nomes_modos = {
+        "artigo1_completo": "Bateria Completa (Artigo 1: 9 Cenários - Ruído vs Backdoor)",
+        "artigo1_furtivo": "Bloco Furtivo (Artigo 1: 4 Defesas + Baseline sob Backdoor)",
+        "artigo1_bruto": "Bloco Bruto (Artigo 1: 4 Defesas + Baseline sob Ruído Gaussiano)",
+        "teste_rapido": "Teste Rápido (3 Cenários de Sanidade)",
+        "customizado": "Cenário Individual Customizado",
+    }
+    nome_modo = nomes_modos.get(modo, modo)
+
+    primeiro = cenarios[0] if cenarios else {}
+    alpha = primeiro.get("dirichlet_alpha", 0.1)
+    seed = primeiro.get("seed", 42)
+    clients = primeiro.get("num_clients", 10)
+    batch_size = primeiro.get("batch_size", 64)
+    lr = primeiro.get("learning_rate", 0.01)
+    epochs = primeiro.get("local_epochs", 2)
+
+    linhas = [
+        "=" * 82,
+        "   DIRETRIZES E CONFIGURAÇÕES DA SESSÃO EXPERIMENTAL (ARTIGO 1 - FL SEGURANÇA)",
+        "=" * 82,
+        f"Data e Hora (UTC)      : {agora_utc}",
+        f"Modo de Execução       : {nome_modo}",
+        f"Dispositivo de Cálculo : {dispositivo}",
+        f"Total de Cenários      : {len(cenarios)} cenário(s) executado(s)",
+        f"Rodadas por Simulação  : {rounds} rodadas",
+        "",
+        "-" * 82,
+        "1. HIPERPARÂMETROS GLOBAIS DA FEDERAÇÃO",
+        "-" * 82,
+        "  • Modelo Neural              : SimpleCNN (Convs 32/64, MaxPool, FC 512, Dropout)",
+        "  • Dataset Centralizado       : CIFAR-10 (10 classes: avião, carro, pássaro, gato...)",
+        f"  • Partição Não-IID           : Dirichlet (Alpha = {alpha})",
+        f"  • Total de Clientes (K)      : {clients} nós federados",
+        f"  • Épocas Locais por Rodada   : {epochs} épocas",
+        f"  • Batch Size Local           : {batch_size}",
+        f"  • Taxa de Aprendizado (LR)   : {lr} (SGD com momentum 0.9)",
+        f"  • Semente Aleatória (Seed)   : {seed} (reprodutibilidade estrita)",
+        "",
+        "-" * 82,
+        "2. DIRETRIZES CIENTÍFICAS E METODOLOGIA (ARTIGO 1)",
+        "-" * 82,
+        "  • Baseline de Controle       : FedAvg com envenenamento = 0.0% (sem nós bizantinos).",
+        "  • Ataque de Força Bruta      : Ruído Gaussiano N(0, 1) em 40% dos nós (desvia pesos).",
+        "  • Ataque Furtivo (Backdoor)  : Targeted Backdoor em 40% dos nós (troca Gato -> Avião).",
+        "  • Ponto Cego Auditado        : Queda crítica no Recall da classe vítima (Gato) acompanhada",
+        "                                 por elevação da Taxa de Sucesso do Ataque (ASR), mesmo com",
+        "                                 Acurácia Global aparentemente estável (ilusão de segurança).",
+        "",
+        "-" * 82,
+        "3. RESULTADOS CONSOLIDADOS POR CENÁRIO NESTA SESSÃO",
+        "-" * 82,
+    ]
+
+    for idx, (c, res) in enumerate(zip(cenarios, resultados), 1):
+        strat = c.get("strategy_name", c.get("strategy", "FedAvg"))
+        att = c.get("attack_type", "nenhum")
+        pr = c.get("poison_rate", 0.0) * 100
+
+        acc = res.get("final_accuracy", 0.0) * 100
+        loss = res.get("final_loss", 0.0)
+        src_rec = res.get("final_source_class_recall", 0.0) * 100
+        asr = res.get("final_asr", 0.0) * 100
+        mrt = res.get("mrt_s", 0.0)
+        total_r = res.get("total_rounds_completed", rounds)
+
+        alerta = ""
+        if att in ["targeted_backdoor", "trigger_patch"] and pr > 0:
+            if src_rec < 15.0 and asr > 70.0:
+                alerta = "  ⚠️ [PONTO CEGO CONFIRMADO: Recall da vítima colapsou e ASR disparou!]"
+            elif asr > 50.0:
+                alerta = "  ⚠️ [ATAQUE PARCIALMENTE EFETIVO]"
+        elif att == "gaussian_noise" and pr > 0:
+            if acc < 25.0:
+                alerta = "  🛑 [DEFESA COLAPSADA sob Ruído Gaussiano]"
+            else:
+                alerta = "  🛡️ [DEFESA RESILIENTE ao Ruído Gaussiano]"
+
+        linhas.extend([
+            f"[{idx:02d}/{len(cenarios):02d}] Defesa: {strat:<10} | Ataque: {att:<18} | Bizantinos: {pr:4.1f}% | Rodadas: {total_r}",
+            f"       • Acurácia Global Final : {acc:5.2f}%",
+            f"       • Perda (Loss) Final     : {loss:.4f}",
+            f"       • Recall da Vítima (Gato): {src_rec:5.2f}%",
+            f"       • Taxa de Sucesso (ASR)  : {asr:5.2f}%",
+            f"       • Tempo Médio por Rodada : {mrt:.2f} s/rodada",
+        ])
+        if alerta:
+            linhas.append(f"     {alerta}")
+        linhas.append("")
+
+    linhas.extend([
+        "-" * 82,
+        "4. ESTRUTURA DOS ARQUIVOS EXPORTADOS NESTE PACOTE",
+        "-" * 82,
+        "  • DIRETRIZES_DO_EXPERIMENTO.txt  : Este arquivo com a memória técnica da sessão.",
+        "  • tabela_resumo_estatistico.csv : Tabela analítica completa para importação no Excel/Pandas.",
+        "  • tabela_resumo_estatistico.md  : Tabela formatada em Markdown pronta para artigos/relatórios.",
+        "  • graficos/                      : Figuras vetoriais e de alta resolução (300 DPI):",
+        "      - figura1_ataque_normal_...  : Curvas de acurácia/loss sob ruído gaussiano.",
+        "      - figura2_ataque_furtivo_... : O Ponto Cego sob Backdoor (Acurácia vs Recall da vítima).",
+        "      - figura3_resumo_barras_...  : Comparativo de barras das 4 defesas sob os dois ataques.",
+        "      - figura4_matrizes_...       : Matrizes de confusão comparativas normalizadas.",
+        "      - figura5_raiox_classes_...  : Dissecação do desempenho das 10 classes CIFAR-10.",
+        "      - figura_customizada_...     : Dashboard 4-em-1 (gerado quando rodado modo customizado).",
+        "  • metrics_json/                  : Logs JSON detalhados rodada a rodada de cada cenário.",
+        "  • modelos/                       : Checkpoints de pesos PyTorch (.pt) salvos ao final.",
+        "=" * 82,
+    ])
+
+    texto_final = "\n".join(linhas) + "\n"
+    with open(txt_path, "w", encoding="utf-8") as f:
+        f.write(texto_final)
+    print(f"  ✔ Diretrizes da sessão salvas em: {txt_path}")
+    return txt_path
+
+
 # =============================================================================
 # CLI E EXECUÇÃO DE BATERIAS
 # =============================================================================
@@ -307,38 +452,61 @@ def executar_bateria(
     rounds: int = 10,
     gerar_graficos: bool = True,
     custom_scenario: dict[str, Any] | None = None,
+    override_params: dict[str, Any] | None = None,
 ) -> None:
     """Executa um lote de cenários ou um cenário customizado, acionando a geração de figuras."""
     if modo == "customizado" and custom_scenario:
         cenarios = [custom_scenario]
     elif modo == "artigo1_furtivo":
-        cenarios = CENARIOS_ARTIGO1_FURTIVO
+        cenarios = [dict(c) for c in CENARIOS_ARTIGO1_FURTIVO]
     elif modo == "artigo1_bruto":
-        cenarios = CENARIOS_ARTIGO1_BRUTO
+        cenarios = [dict(c) for c in CENARIOS_ARTIGO1_BRUTO]
     elif modo == "teste_rapido":
-        cenarios = CENARIOS_TESTE_RAPIDO
+        cenarios = [dict(c) for c in CENARIOS_TESTE_RAPIDO]
     else:  # artigo1_completo
-        cenarios = CENARIOS_ARTIGO1
+        cenarios = [dict(c) for c in CENARIOS_ARTIGO1]
+
+    # Aplica overrides aos cenários selecionados
+    if override_params:
+        for c in cenarios:
+            for k, v in override_params.items():
+                if v is not None:
+                    # Preserva envenenamento 0.0 para o Baseline em lotes do artigo
+                    if k == "poison_rate" and c.get("poison_rate") == 0.0 and modo != "customizado":
+                        continue
+                    c[k] = v
 
     print("=" * 80)
     print(f"  🚀 EXECUÇÃO DE EXPERIMENTOS ({len(cenarios)} cenário(s) | Modo: {modo})")
     print(f"  Resultados: {RESULTS_DIR}")
     print("=" * 80)
 
+    resultados_sessao = []
     for i, cenario in enumerate(cenarios, 1):
         print(f"\n[{i:02d}/{len(cenarios)}] Iniciando cenário...")
-        # num_rounds do cenario tem precedência se já estiver nele, senão usa rounds
         num_rounds = cenario.get("num_rounds", rounds)
         cenario_limpo = {k: v for k, v in cenario.items() if k != "num_rounds"}
-        simular_cenario(**cenario_limpo, num_rounds=num_rounds)
+        summary = simular_cenario(**cenario_limpo, num_rounds=num_rounds)
+        resultados_sessao.append(summary)
 
     print("\n" + "═" * 80)
     print("  ✔ TODAS AS SIMULAÇÕES FORAM CONCLUÍDAS COM SUCESSO!")
+
+    # Gera o arquivo TXT de diretrizes e configurações estruturadas
+    _gerar_relatorio_diretrizes_txt(
+        results_dir=RESULTS_DIR,
+        modo=modo,
+        rounds=rounds,
+        cenarios=cenarios,
+        resultados=resultados_sessao,
+        overrides=override_params,
+    )
+
     if gerar_graficos:
         print("  Gerando figuras científicas, matrizes de confusão e tabela resumo...")
         print("═" * 80 + "\n")
         import plotar_resultados
-        plotar_resultados.main()
+        plotar_resultados.main(target_rounds=rounds, modo_executado=modo, custom_scenario=custom_scenario)
     else:
         print("═" * 80 + "\n")
 
@@ -360,32 +528,48 @@ def main() -> None:
     parser.add_argument("--ataque", type=str, default=None,
                         choices=["targeted_backdoor", "gaussian_noise", "label_flipping", "trigger_patch"],
                         help="Ataque para cenário customizado")
-    parser.add_argument("--poison_rate", type=float, default=0.4, help="Fração de nós maliciosos (ex: 0.4)")
-    parser.add_argument("--alpha", type=float, default=0.1, help="Parâmetro Dirichlet de assimetria não-IID (ex: 0.1)")
-    parser.add_argument("--seed", type=int, default=42, help="Seed aleatória para reprodutibilidade")
-    parser.add_argument("--clients", type=int, default=10, help="Número total de clientes na federação")
-    parser.add_argument("--batch_size", type=int, default=64, help="Tamanho do lote de treino local")
-    parser.add_argument("--lr", type=float, default=0.01, help="Taxa de aprendizado local")
-    parser.add_argument("--epochs", type=int, default=2, help="Número de épocas locais de treino por rodada")
+    parser.add_argument("--poison_rate", type=float, default=None, help="Fração de nós maliciosos (ex: 0.4)")
+    parser.add_argument("--alpha", type=float, default=None, help="Parâmetro Dirichlet de assimetria não-IID (ex: 0.1)")
+    parser.add_argument("--seed", type=int, default=None, help="Seed aleatória para reprodutibilidade")
+    parser.add_argument("--clients", type=int, default=None, help="Número total de clientes na federação")
+    parser.add_argument("--batch_size", type=int, default=None, help="Tamanho do lote de treino local")
+    parser.add_argument("--lr", type=float, default=None, help="Taxa de aprendizado local")
+    parser.add_argument("--epochs", type=int, default=None, help="Número de épocas locais de treino por rodada")
     parser.add_argument("--sem_graficos", action="store_true", help="Pula a geração automática de gráficos ao final")
 
     args = parser.parse_args()
 
-    # Se parâmetros específicos de cenário forem fornecidos, ativa modo customizado
+    override_params = {}
+    if args.alpha is not None:
+        override_params["dirichlet_alpha"] = args.alpha
+    if args.seed is not None:
+        override_params["seed"] = args.seed
+    if args.clients is not None:
+        override_params["num_clients"] = args.clients
+    if args.batch_size is not None:
+        override_params["batch_size"] = args.batch_size
+    if args.lr is not None:
+        override_params["learning_rate"] = args.lr
+    if args.epochs is not None:
+        override_params["local_epochs"] = args.epochs
+    if args.poison_rate is not None:
+        override_params["poison_rate"] = args.poison_rate
+
+    # Se modo customizado ou se foi especificada uma defesa ou ataque individual
     custom_scenario = None
     modo = args.modo
-    if args.defesa is not None or args.ataque is not None or args.modo == "customizado":
+    if args.modo == "customizado" or (args.defesa is not None and args.ataque is not None):
         modo = "customizado"
         custom_scenario = {
-            "strategy_name": args.defesa or "Bulyan",
+            "strategy_name": args.defesa or "FedAvg",
             "attack_type": args.ataque or "targeted_backdoor",
-            "poison_rate": args.poison_rate,
-            "dirichlet_alpha": args.alpha,
-            "seed": args.seed,
-            "num_clients": args.clients,
-            "batch_size": args.batch_size,
-            "learning_rate": args.lr,
-            "local_epochs": args.epochs,
+            "poison_rate": args.poison_rate if args.poison_rate is not None else 0.4,
+            "dirichlet_alpha": args.alpha if args.alpha is not None else 0.1,
+            "seed": args.seed if args.seed is not None else 42,
+            "num_clients": args.clients if args.clients is not None else 10,
+            "batch_size": args.batch_size if args.batch_size is not None else 64,
+            "learning_rate": args.lr if args.lr is not None else 0.01,
+            "local_epochs": args.epochs if args.epochs is not None else 2,
             "num_rounds": args.rounds,
         }
 
@@ -394,6 +578,7 @@ def main() -> None:
         rounds=args.rounds,
         gerar_graficos=not args.sem_graficos,
         custom_scenario=custom_scenario,
+        override_params=override_params,
     )
 
 

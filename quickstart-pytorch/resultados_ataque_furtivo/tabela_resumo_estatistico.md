@@ -8,6 +8,6 @@
 | Ataque Normal | **FedMedian** | `gaussian_noise` | 40% | 19.29% | 43.90% | 0.00% | 31.34 s |
 | Ataque Normal | **Krum** | `gaussian_noise` | 40% | 10.00% | 0.00% | 0.00% | 31.47 s |
 | Ataque Furtivo | **Bulyan** | `targeted_backdoor` | 40% | 28.41% | 0.00% | 54.70% | 29.14 s |
-| Ataque Furtivo | **FedAvg** | `targeted_backdoor` | 40% | 43.18% | 0.50% | 42.10% | 29.19 s |
+| Ataque Furtivo | **FedAvg** | `targeted_backdoor` | 40% | 51.05% | 8.10% | 41.60% | 32.14 s |
 | Ataque Furtivo | **FedMedian** | `targeted_backdoor` | 40% | 26.40% | 0.00% | 41.30% | 29.29 s |
 | Ataque Furtivo | **Krum** | `targeted_backdoor` | 40% | 10.00% | 0.00% | 0.00% | 29.42 s |

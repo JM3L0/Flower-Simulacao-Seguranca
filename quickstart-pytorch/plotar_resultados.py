@@ -190,20 +190,25 @@ def consolidar_estatisticas(grupos: dict) -> list[dict]:
 # GERADOR DE FIGURAS CIENTÍFICAS
 # ============================================================================
 
-def plotar_figura1_ataque_normal(cenarios: list[dict], output_dir: str):
+def plotar_figura1_ataque_normal(cenarios: list[dict], output_dir: str, target_rounds: int | None = None):
     """
     FIGURA 1: Avaliação sob Ataque Normal (Ruído Gaussiano, PR=40%).
     Subplot 1: Acurácia Global por Rodada (4 defesas + baseline).
     Subplot 2: Perda (Loss) por Rodada.
     """
-    # Filtra cenários relevantes
-    normais = [c for c in cenarios if c["attack_type"] == "gaussian_noise" or c["poison_rate"] == 0.0]
-    if not normais:
+    normais = [
+        c for c in cenarios
+        if (c["attack_type"] == "gaussian_noise" or c["poison_rate"] == 0.0)
+        and (target_rounds is None or c["num_server_rounds"] == target_rounds)
+    ]
+    defesas_ruido = [c for c in normais if c["attack_type"] == "gaussian_noise"]
+    if not defesas_ruido:
+        if target_rounds:
+            print(f"  [i] Figura 1 pulada (nenhum experimento de Ruído Gaussiano com T={target_rounds} rodadas).")
         return
 
     fig, (ax_acc, ax_loss) = plt.subplots(1, 2, figsize=(14, 5.5))
 
-    # Ordem fixa de plotagem
     ordem_defesas = ["Baseline (Sem Ataque)", "FedAvg", "FedMedian", "Krum", "Bulyan"]
 
     for def_nome in ordem_defesas:
@@ -251,24 +256,36 @@ def plotar_figura1_ataque_normal(cenarios: list[dict], output_dir: str):
     ax_loss.set_ylabel("Cross-Entropy Loss")
     ax_loss.legend(loc="best", frameon=False)
 
-    fig.suptitle("Figura 1: Resiliência das Defesas Convencionais contra Ataque Normal (Ruído Gaussiano, 40%)", fontsize=14, fontweight="bold", y=0.98)
+    sufixo_titulo = f", T={target_rounds} Rodadas" if target_rounds else ""
+    fig.suptitle(f"Figura 1: Resiliência das Defesas Convencionais contra Ataque Normal (Ruído Gaussiano, 40%{sufixo_titulo})", fontsize=14, fontweight="bold", y=0.98)
     fig.tight_layout()
 
-    out_path = os.path.join(output_dir, "figura1_ataque_normal_acuracia_e_loss.png")
+    out_name = f"figura1_ataque_normal_acuracia_e_loss_T{target_rounds}.png" if target_rounds and target_rounds != 10 else "figura1_ataque_normal_acuracia_e_loss.png"
+    out_path = os.path.join(output_dir, out_name)
     fig.savefig(out_path, dpi=300, bbox_inches="tight")
     plt.close(fig)
     print(f"  [✓] Figura 1 salva: {out_path}")
 
 
-def plotar_figura2_ataque_furtivo(cenarios: list[dict], output_dir: str):
+def plotar_figura2_ataque_furtivo(cenarios: list[dict], output_dir: str, target_rounds: int | None = None):
     """
     FIGURA 2: O Ponto Cego sob Ataque Furtivo (Targeted Backdoor, PR=40%).
     Subplot 1: Acurácia Global Aparentada (4 defesas parecem saudáveis).
     Subplot 2: Recall da Classe Vítima (Mostra o colapso oculto para 0%).
     """
-    furtivos = [c for c in cenarios if c["attack_type"] == "targeted_backdoor"]
-    baseline = [c for c in cenarios if c["poison_rate"] == 0.0]
+    furtivos = [
+        c for c in cenarios
+        if c["attack_type"] == "targeted_backdoor"
+        and (target_rounds is None or c["num_server_rounds"] == target_rounds)
+    ]
+    baseline = [
+        c for c in cenarios
+        if c["poison_rate"] == 0.0
+        and (target_rounds is None or c["num_server_rounds"] == target_rounds)
+    ]
     if not furtivos:
+        if target_rounds:
+            print(f"  [i] Figura 2 pulada (nenhum experimento de Ataque Furtivo com T={target_rounds} rodadas).")
         return
 
     fig, (ax_acc, ax_rec) = plt.subplots(1, 2, figsize=(14, 5.5))
@@ -328,10 +345,12 @@ def plotar_figura2_ataque_furtivo(cenarios: list[dict], output_dir: str):
     ax_rec.axhline(0, color="black", linestyle=":", alpha=0.4)
     ax_rec.legend(loc="best", frameon=False)
 
-    fig.suptitle("Figura 2: O Ponto Cego sob Ataque Furtivo (Targeted Backdoor, 40%)", fontsize=14, fontweight="bold", y=0.98)
+    sufixo_titulo = f", T={target_rounds} Rodadas" if target_rounds else ""
+    fig.suptitle(f"Figura 2: O Ponto Cego sob Ataque Furtivo (Targeted Backdoor, 40%{sufixo_titulo})", fontsize=14, fontweight="bold", y=0.98)
     fig.tight_layout()
 
-    out_path = os.path.join(output_dir, "figura2_ataque_furtivo_ponto_cego.png")
+    out_name = f"figura2_ataque_furtivo_ponto_cego_T{target_rounds}.png" if target_rounds and target_rounds != 10 else "figura2_ataque_furtivo_ponto_cego.png"
+    out_path = os.path.join(output_dir, out_name)
     fig.savefig(out_path, dpi=300, bbox_inches="tight")
     plt.close(fig)
     print(f"  [✓] Figura 2 salva: {out_path}")
@@ -544,7 +563,126 @@ def plotar_figura5_raiox_classes(cenarios: list[dict], output_dir: str):
     out_path = os.path.join(output_dir, "figura5_raiox_classes_ponto_cego.png")
     fig.savefig(out_path, dpi=300, bbox_inches="tight")
     plt.close(fig)
-    print(f"  [✓] Figura 5 salva: {out_path}")
+def plotar_diagnostico_cenario_customizado(c: dict, output_dir: str):
+    """
+    DASHBOARD UNITÁRIO PARA CENÁRIO CUSTOMIZADO:
+    Gera um painel 2x2 analítico focado no experimento unitário executado:
+    (A) Acurácia Global (%) e Cross-Entropy Loss ao longo das rodadas
+    (B) Recall da Vítima vs. ASR (%)
+    (C) Matriz de Confusão 10x10 da Rodada Final
+    (D) Raio-X Anatômico da Acurácia por Classe no CIFAR-10 na Rodada Final
+    """
+    strat = c.get("strategy", "FedAvg")
+    atk = c.get("attack_type", "targeted_backdoor")
+    num_rounds = c.get("num_server_rounds", len(c.get("rounds_stats", [])))
+    pr = c.get("poison_rate", 0.0)
+
+    fig, axes = plt.subplots(2, 2, figsize=(14, 11))
+    ax_acc, ax_sec = axes[0, 0], axes[0, 1]
+    ax_cm, ax_cls = axes[1, 0], axes[1, 1]
+
+    rounds = [r["round"] for r in c["rounds_stats"]]
+    acc_means = [r["acc_mean"] * 100 for r in c["rounds_stats"]]
+    loss_means = [r["loss_mean"] for r in c["rounds_stats"]]
+    src_recs = [r["src_recall_mean"] * 100 for r in c["rounds_stats"]]
+    asrs = [r["asr_mean"] * 100 for r in c["rounds_stats"]]
+
+    # (A) Acurácia Global e Loss
+    color_acc = DEFENSE_COLORS.get(strat, "#1976D2")
+    line1 = ax_acc.plot(rounds, acc_means, color=color_acc, marker="s", lw=2.4, label="Acurácia Global (%)")
+    ax_acc.set_title(f"(A) Acurácia Global ({strat})", fontweight="bold", fontsize=12)
+    ax_acc.set_xlabel("Rodada de Treinamento")
+    ax_acc.set_ylabel("Acurácia Global (%)", color=color_acc)
+    ax_acc.set_ylim(0, 100)
+    ax_acc.tick_params(axis="y", labelcolor=color_acc)
+
+    ax_loss = ax_acc.twinx()
+    line2 = ax_loss.plot(rounds, loss_means, color="#E65100", marker="o", linestyle="--", lw=2.0, label="Loss")
+    ax_loss.set_ylabel("Cross-Entropy Loss", color="#E65100")
+    ax_loss.tick_params(axis="y", labelcolor="#E65100")
+    ax_loss.grid(False)
+
+    lines = line1 + line2
+    labels = [l.get_label() for l in lines]
+    ax_acc.legend(lines, labels, loc="center right", frameon=True, framealpha=0.9)
+
+    # (B) Recall da Vítima vs. ASR
+    ax_sec.plot(rounds, asrs, color="#D32F2F", marker="^", lw=2.4, label=f"ASR - Sucesso Ataque (Alvo={CIFAR10_CLASSES[TARGET_CLASS_DEFAULT]})")
+    ax_sec.plot(rounds, src_recs, color="#388E3C", marker="v", lw=2.4, label=f"Recall Vítima ({CIFAR10_CLASSES[SOURCE_CLASS_DEFAULT]})")
+    ax_sec.axhline(0, color="gray", linestyle=":", alpha=0.5)
+    ax_sec.set_title(f"(B) Recall da Vítima vs. ASR ({atk})", fontweight="bold", fontsize=12)
+    ax_sec.set_xlabel("Rodada de Treinamento")
+    ax_sec.set_ylabel("Taxa / Percentual (%)")
+    ax_sec.set_ylim(-5, 105)
+    ax_sec.legend(loc="best", frameon=True, framealpha=0.9)
+
+    # (C) Matriz de Confusão 10x10 Final
+    if c.get("cm_mean"):
+        cm = np.array(c["cm_mean"])
+        row_sums = cm.sum(axis=1, keepdims=True)
+        cm_norm = np.divide(cm, row_sums, out=np.zeros_like(cm, dtype=float), where=row_sums != 0) * 100
+        im = ax_cm.imshow(cm_norm, interpolation="nearest", cmap="Blues", vmin=0, vmax=100)
+        fig.colorbar(im, ax=ax_cm, fraction=0.046, pad=0.04)
+
+        if atk in ["targeted_backdoor", "trigger_patch"]:
+            rect_x = TARGET_CLASS_DEFAULT - 0.5
+            rect_y = SOURCE_CLASS_DEFAULT - 0.5
+            ax_cm.add_patch(plt.Rectangle((rect_x, rect_y), 1, 1, fill=False, edgecolor="red", lw=2.5, linestyle="--"))
+
+        ax_cm.set_title(f"(C) Matriz de Confusão Final (Rodada {num_rounds})", fontweight="bold", fontsize=12)
+        ax_cm.set_xticks(range(10))
+        ax_cm.set_yticks(range(10))
+        ax_cm.set_xticklabels([cls[:3] for cls in CIFAR10_CLASSES], fontsize=9)
+        ax_cm.set_yticklabels([cls[:3] for cls in CIFAR10_CLASSES], fontsize=9)
+        ax_cm.set_xlabel("Classe Prevista", fontweight="bold")
+        ax_cm.set_ylabel("Classe Real", fontweight="bold")
+        ax_cm.grid(False)
+    else:
+        ax_cm.text(0.5, 0.5, "Matriz de Confusão indisponível", ha="center", va="center")
+
+    # (D) Raio-X das 10 Classes na Rodada Final
+    per_class = c.get("per_class_mean", {})
+    if per_class:
+        src_idx = SOURCE_CLASS_DEFAULT
+        acc_values = [per_class.get(cls, 0.0) for cls in CIFAR10_CLASSES]
+        cores = ["#D32F2F" if i == src_idx else "#1976D2" for i in range(len(CIFAR10_CLASSES))]
+        y_pos = np.arange(len(CIFAR10_CLASSES))
+        bars = ax_cls.barh(y_pos, acc_values, color=cores, edgecolor="black", height=0.62, alpha=0.85)
+
+        for i, (bar, val) in enumerate(zip(bars, acc_values)):
+            tag = f" [!] PONTO CEGO ({val:.1f}%)" if i == src_idx else f" {val:.1f}%"
+            ax_cls.annotate(tag, xy=(val, y_pos[i]), xytext=(val + 1, y_pos[i]), va="center",
+                            fontsize=9, fontweight="bold" if i == src_idx else "normal",
+                            color="#D32F2F" if i == src_idx else "#333333")
+
+        ax_cls.set_yticks(y_pos)
+        ax_cls.set_yticklabels(CIFAR10_CLASSES, fontsize=9, fontweight="bold")
+        ax_cls.set_xlabel("Acurácia por Classe (%)", fontweight="bold")
+        ax_cls.set_xlim(0, 118)
+        ax_cls.set_title(f"(D) Raio-X das 10 Classes (Rodada {num_rounds})", fontweight="bold", fontsize=12)
+        ax_cls.invert_yaxis()
+        ax_cls.grid(axis="x", linestyle="--", alpha=0.3)
+        ax_cls.grid(axis="y", visible=False)
+    else:
+        ax_cls.text(0.5, 0.5, "Acurácia por classe indisponível", ha="center", va="center")
+
+    for ax in [ax_acc, ax_sec, ax_cls]:
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+
+    fig.suptitle(
+        f"Painel Diagnóstico de Cenário Customizado: {strat} | Ataque: {atk} (PR={pr*100:.0f}%, T={num_rounds} Rodadas)",
+        fontsize=14, fontweight="bold", y=0.99
+    )
+    fig.tight_layout()
+
+    out_named = os.path.join(output_dir, f"figura_customizada_{strat}_{atk}_{num_rounds}rodadas.png")
+    out_latest = os.path.join(output_dir, "figura_customizada_diagnostico.png")
+    fig.savefig(out_named, dpi=300, bbox_inches="tight")
+    fig.savefig(out_latest, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  [✓] Dashboard do Cenário Customizado salvo: {out_named}")
+    print(f"  [✓] Atalho atualizado:                      {out_latest}")
 
 
 # ============================================================================
@@ -620,17 +758,23 @@ def gerar_tabela_resumo_estatistico(cenarios: list[dict], output_base: str):
 # PONTO DE ENTRADA PRINCIPAL
 # ============================================================================
 
-def main():
+def main(
+    target_rounds: int | None = None,
+    modo_executado: str | None = None,
+    custom_scenario: dict | None = None,
+    metrics_dir: str = METRICS_DIR,
+    output_dir: str = OUTPUT_DIR,
+):
     print("=" * 78)
     print("  🚀 GERADOR DE FIGURAS CIENTÍFICAS E TABELAS ESTATÍSTICAS (ARTIGO 1)")
     print("=" * 78)
-    print(f"  Métricas: {METRICS_DIR}")
-    print(f"  Gráficos: {OUTPUT_DIR}\n")
+    print(f"  Métricas: {metrics_dir}")
+    print(f"  Gráficos: {output_dir}\n")
 
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    os.makedirs(CM_OUTPUT_DIR, exist_ok=True)
+    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(os.path.join(output_dir, "matrizes_confusao"), exist_ok=True)
 
-    grupos = carregar_e_agrupar_experimentos(METRICS_DIR)
+    grupos = carregar_e_agrupar_experimentos(metrics_dir)
     if not grupos:
         print("  [!] Nenhum arquivo de métricas JSON encontrado.")
         return
@@ -638,18 +782,57 @@ def main():
     cenarios = consolidar_estatisticas(grupos)
     print(f"  Total de cenários consolidados: {len(cenarios)}")
 
-    print("\n  Gerando as 5 Figuras Científicas do Artigo...")
-    plotar_figura1_ataque_normal(cenarios, OUTPUT_DIR)
-    plotar_figura2_ataque_furtivo(cenarios, OUTPUT_DIR)
-    plotar_figura3_resumo_barras(cenarios, OUTPUT_DIR)
-    plotar_figura4_matrizes_confusao(cenarios, OUTPUT_DIR)
-    plotar_figura5_raiox_classes(cenarios, OUTPUT_DIR)
+    # 1. Se for modo customizado (ou cenário customizado unitário), plota o dashboard individual
+    if modo_executado == "customizado" or custom_scenario:
+        print("\n  Gerando Dashboard Analítico para Cenário Customizado...")
+        c_cand = cenarios
+        if custom_scenario:
+            s_name = custom_scenario.get("strategy_name")
+            a_name = custom_scenario.get("attack_type")
+            c_cand = [c for c in cenarios if c["strategy"] == s_name and c["attack_type"] == a_name]
+        if target_rounds:
+            c_cand = [c for c in c_cand if c["num_server_rounds"] == target_rounds]
+        if c_cand:
+            melhor_c = max(c_cand, key=lambda x: (len(x.get("rounds_stats", [])), x.get("num_server_rounds", 0)))
+            plotar_diagnostico_cenario_customizado(melhor_c, output_dir)
+    else:
+        # Verifica se há cenários longos unitários (ex: 40 rodadas) para também gerar dashboard individual
+        for c in cenarios:
+            if c["num_server_rounds"] >= 20:
+                plotar_diagnostico_cenario_customizado(c, output_dir)
+
+    # 2. Identifica os horizontes de rodadas disponíveis
+    rodadas_disponiveis = sorted({c["num_server_rounds"] for c in cenarios}, reverse=True)
+
+    if target_rounds:
+        horizontes_para_plotar = [target_rounds]
+    else:
+        # Plota para cada horizonte que tiver pelo menos 2 defesas (bateria comparativa)
+        horizontes_para_plotar = [r for r in rodadas_disponiveis if len([c for c in cenarios if c["num_server_rounds"] == r]) >= 2]
+        if not horizontes_para_plotar and rodadas_disponiveis:
+            horizontes_para_plotar = [rodadas_disponiveis[0]]
+
+    for r_alvo in horizontes_para_plotar:
+        print(f"\n  Gerando Figuras Científicas Comparativas para Horizonte T={r_alvo} Rodadas...")
+        plotar_figura1_ataque_normal(cenarios, output_dir, target_rounds=r_alvo)
+        plotar_figura2_ataque_furtivo(cenarios, output_dir, target_rounds=r_alvo)
+        plotar_figura3_resumo_barras(cenarios, output_dir)
+        plotar_figura4_matrizes_confusao(cenarios, output_dir)
+        plotar_figura5_raiox_classes(cenarios, output_dir)
+
     gerar_tabela_resumo_estatistico(cenarios, BASE_RESULTS_DIR)
 
     print("\n" + "=" * 78)
-    print(f"  [✓] Todas as figuras e tabelas geradas com sucesso em: {OUTPUT_DIR}")
+    print(f"  [✓] Processamento concluído com sucesso em: {output_dir}")
     print("=" * 78)
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser(description="Gerador de Figuras Científicas e Tabelas Estatísticas.")
+    parser.add_argument("--rounds", type=int, default=None, help="Filtrar horizonte de rodadas alvo (ex: 10 ou 40)")
+    parser.add_argument("--modo", type=str, default=None, help="Modo da bateria executada")
+    parser.add_argument("--metrics_dir", type=str, default=METRICS_DIR, help="Diretório das métricas JSON")
+    parser.add_argument("--output_dir", type=str, default=OUTPUT_DIR, help="Diretório de saída dos gráficos")
+    args = parser.parse_args()
+    main(target_rounds=args.rounds, modo_executado=args.modo, metrics_dir=args.metrics_dir, output_dir=args.output_dir)

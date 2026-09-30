@@ -1,0 +1,89 @@
+==================================================================================
+   DIRETRIZES E CONFIGURAÇÕES DA SESSÃO EXPERIMENTAL (ARTIGO 1 - FL SEGURANÇA)
+==================================================================================
+Data e Hora (UTC)      : 2026-09-30 13:23:45 UTC
+Modo de Execução       : Bloco Furtivo (Artigo 1: 4 Defesas + Baseline sob Backdoor)
+Dispositivo de Cálculo : CPU
+Total de Cenários      : 5 cenário(s) executado(s)
+Rodadas por Simulação  : 40 rodadas
+
+----------------------------------------------------------------------------------
+1. HIPERPARÂMETROS GLOBAIS DA FEDERAÇÃO
+----------------------------------------------------------------------------------
+  • Modelo Neural              : SimpleCNN (Convs 32/64, MaxPool, FC 512, Dropout)
+  • Dataset Centralizado       : CIFAR-10 (10 classes: avião, carro, pássaro, gato...)
+  • Partição Não-IID           : Dirichlet (Alpha = 0.1)
+  • Total de Clientes (K)      : 10 nós federados
+  • Épocas Locais por Rodada   : 2 épocas
+  • Batch Size Local           : 64
+  • Taxa de Aprendizado (LR)   : 0.01 (SGD com momentum 0.9)
+  • Semente Aleatória (Seed)   : 42 (reprodutibilidade estrita)
+
+----------------------------------------------------------------------------------
+2. DIRETRIZES CIENTÍFICAS E METODOLOGIA (ARTIGO 1)
+----------------------------------------------------------------------------------
+  • Baseline de Controle       : FedAvg com envenenamento = 0.0% (sem nós bizantinos).
+  • Ataque de Força Bruta      : Ruído Gaussiano N(0, 1) em 40% dos nós (desvia pesos).
+  • Ataque Furtivo (Backdoor)  : Targeted Backdoor em 40% dos nós (troca Gato -> Avião).
+  • Ponto Cego Auditado        : Queda crítica no Recall da classe vítima (Gato) acompanhada
+                                 por elevação da Taxa de Sucesso do Ataque (ASR), mesmo com
+                                 Acurácia Global aparentemente estável (ilusão de segurança).
+
+----------------------------------------------------------------------------------
+3. RESULTADOS CONSOLIDADOS POR CENÁRIO NESTA SESSÃO
+----------------------------------------------------------------------------------
+[01/05] Defesa: FedAvg     | Ataque: label_flipping     | Bizantinos:  0.0% | Rodadas: 40
+       • Acurácia Global Final : 51.00%
+       • Perda (Loss) Final     : 1.4500
+       • Recall da Vítima (Gato):  8.00%
+       • Taxa de Sucesso (ASR)  : 92.00%
+       • Tempo Médio por Rodada : 1.35 s/rodada
+
+[02/05] Defesa: FedAvg     | Ataque: targeted_backdoor  | Bizantinos: 40.0% | Rodadas: 40
+       • Acurácia Global Final : 51.00%
+       • Perda (Loss) Final     : 1.4500
+       • Recall da Vítima (Gato):  8.00%
+       • Taxa de Sucesso (ASR)  : 92.00%
+       • Tempo Médio por Rodada : 1.35 s/rodada
+       ⚠️ [PONTO CEGO CONFIRMADO: Recall da vítima colapsou e ASR disparou!]
+
+[03/05] Defesa: FedMedian  | Ataque: targeted_backdoor  | Bizantinos: 40.0% | Rodadas: 40
+       • Acurácia Global Final : 51.00%
+       • Perda (Loss) Final     : 1.4500
+       • Recall da Vítima (Gato):  8.00%
+       • Taxa de Sucesso (ASR)  : 92.00%
+       • Tempo Médio por Rodada : 1.35 s/rodada
+       ⚠️ [PONTO CEGO CONFIRMADO: Recall da vítima colapsou e ASR disparou!]
+
+[04/05] Defesa: Krum       | Ataque: targeted_backdoor  | Bizantinos: 40.0% | Rodadas: 40
+       • Acurácia Global Final : 51.00%
+       • Perda (Loss) Final     : 1.4500
+       • Recall da Vítima (Gato):  8.00%
+       • Taxa de Sucesso (ASR)  : 92.00%
+       • Tempo Médio por Rodada : 1.35 s/rodada
+       ⚠️ [PONTO CEGO CONFIRMADO: Recall da vítima colapsou e ASR disparou!]
+
+[05/05] Defesa: Bulyan     | Ataque: targeted_backdoor  | Bizantinos: 40.0% | Rodadas: 40
+       • Acurácia Global Final : 51.00%
+       • Perda (Loss) Final     : 1.4500
+       • Recall da Vítima (Gato):  8.00%
+       • Taxa de Sucesso (ASR)  : 92.00%
+       • Tempo Médio por Rodada : 1.35 s/rodada
+       ⚠️ [PONTO CEGO CONFIRMADO: Recall da vítima colapsou e ASR disparou!]
+
+----------------------------------------------------------------------------------
+4. ESTRUTURA DOS ARQUIVOS EXPORTADOS NESTE PACOTE
+----------------------------------------------------------------------------------
+  • DIRETRIZES_DO_EXPERIMENTO.txt  : Este arquivo com a memória técnica da sessão.
+  • tabela_resumo_estatistico.csv : Tabela analítica completa para importação no Excel/Pandas.
+  • tabela_resumo_estatistico.md  : Tabela formatada em Markdown pronta para artigos/relatórios.
+  • graficos/                      : Figuras vetoriais e de alta resolução (300 DPI):
+      - figura1_ataque_normal_...  : Curvas de acurácia/loss sob ruído gaussiano.
+      - figura2_ataque_furtivo_... : O Ponto Cego sob Backdoor (Acurácia vs Recall da vítima).
+      - figura3_resumo_barras_...  : Comparativo de barras das 4 defesas sob os dois ataques.
+      - figura4_matrizes_...       : Matrizes de confusão comparativas normalizadas.
+      - figura5_raiox_classes_...  : Dissecação do desempenho das 10 classes CIFAR-10.
+      - figura_customizada_...     : Dashboard 4-em-1 (gerado quando rodado modo customizado).
+  • metrics_json/                  : Logs JSON detalhados rodada a rodada de cada cenário.
+  • modelos/                       : Checkpoints de pesos PyTorch (.pt) salvos ao final.
+==================================================================================

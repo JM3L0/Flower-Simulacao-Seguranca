@@ -17,3 +17,7 @@ ray/
 
 # Documentação arquivada antiga
 documentacao/
+
+# Arquivos compactados
+*.zip
+

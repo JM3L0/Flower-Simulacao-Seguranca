@@ -1,0 +1,3 @@
+Categoria,Defesa,Ataque,Dirichlet_Alpha,Poison_Rate,Num_Trials,Acc_Global_Final,Recall_Vitima_Final,ASR_Final,MRT_s
+Controle Limpo,FedAvg,targeted_backdoor,0.1,0.0,1,42.5800,50.0000,1.4000,57.1049
+Ataque Normal,FedAvg,gaussian_noise,0.1,0.4,1,36.4500,56.0000,0.0000,71.1935

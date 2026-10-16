@@ -16,10 +16,20 @@ Após a execução, gerar os gráficos:
 python plotar_resultados.py
 ```
 
+## Execução em Nuvem (Google Colab - GPU T4 Gratuita)
+
+| Finalidade | Notebook | Link Direto |
+|---|---|---|
+| **Flower Canônico Puro** (100% nós honestos, formulário interativo) | `executar_flower_puro.ipynb` | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/JM3L0/Flower-Simulacao-Seguranca/blob/main/executar_flower_puro.ipynb) |
+| **Bateria de Segurança** (Artigo 1: Defesas vs. Ataques e Backdoors) | `executar_no_colab.ipynb` | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/JM3L0/Flower-Simulacao-Seguranca/blob/main/executar_no_colab.ipynb) |
+
 ## Estrutura do projeto
 
 ```text
 Flower-Simulacao-Seguranca/
+│
+├── executar_flower_puro.ipynb                     # 🌸 Notebook Colab para simulação Flower pura (Sem ataques)
+├── executar_no_colab.ipynb                        # 🔬 Notebook Colab para bateria de segurança (Artigo 1)
 │
 ├── docs/                                          # 🧠 DOCUMENTAÇÃO UNIFICADA E PESQUISA
 │   ├── 00_COMECE_AQUI.md                          # Portal central e quickstart
@@ -31,9 +41,12 @@ Flower-Simulacao-Seguranca/
 │
 └── quickstart-pytorch/                            # 🚀 O MOTOR EXECUTÁVEL (FLOWER + PYTORCH)
     ├── pyproject.toml                             # Configurações do Flower
+    ├── executar_bateria.py                        # Executor modular de baterias e sessões
     ├── plotar_resultados.py                       # Gerador automático das figuras do artigo
     ├── pytorchexample/                            # Código Python (task.py, server_app.py, client_app.py, attacks.py)
     └── resultados_ataque_furtivo/                 # 📁 PASTA EXCLUSIVA DE RESULTADOS DO ARTIGO 1
+        ├── sessoes/                               # 🗂️ Histórico isolado de cada simulação executada
+        ├── latest/                                # ⚡ Link/cópia da sessão mais recente
         ├── metrics_json/                          # 📊 Arquivos JSON com todas as métricas por classe
         ├── graficos/                              # 📈 Figuras PNG (Divergência, Matrizes de Confusão, ASR)
         └── modelos/                               # 💾 Checkpoints (.pt)

@@ -35,11 +35,17 @@ git push origin main
 ---
 
 ### Passo 2: Abrir o Notebook no Google Colab
-Você não precisa arrastar nenhum arquivo para o Google Drive. Basta clicar no link direto:
+Você não precisa arrastar nenhum arquivo para o Google Drive. Escolha o notebook adequado para a sua finalidade:
 
-👉 **[Abrir executar_no_colab.ipynb no Google Colab](https://colab.research.google.com/github/JM3L0/Flower-Simulacao-Seguranca/blob/main/executar_no_colab.ipynb)**
+* 🔬 **Pesquisa de Segurança (Artigo 1)**:
+  👉 **[Abrir executar_no_colab.ipynb no Google Colab](https://colab.research.google.com/github/JM3L0/Flower-Simulacao-Seguranca/blob/main/executar_no_colab.ipynb)**
+  *(Executa a bateria de defesas FedAvg, FedMedian, Krum e Bulyan sob ataques e backdoors furtivos)*
 
-Ou abra [colab.research.google.com](https://colab.research.google.com/), clique na aba **GitHub**, digite `JM3L0/Flower-Simulacao-Seguranca` e selecione `executar_no_colab.ipynb`.
+* 🌸 **Aprendizado Federado Canônico (Flower Puro)**:
+  👉 **[Abrir executar_flower_puro.ipynb no Google Colab](https://colab.research.google.com/github/JM3L0/Flower-Simulacao-Seguranca/blob/main/executar_flower_puro.ipynb)**
+  *(Ideal para colegas e estudos de FL limpo: 100% nós honestos, sem ataques/backdoors, com painel de controle interativo por formulário)*
+
+Ou abra [colab.research.google.com](https://colab.research.google.com/), clique na aba **GitHub**, digite `JM3L0/Flower-Simulacao-Seguranca` e selecione o notebook desejado.
 
 > [!IMPORTANT]
 > **Ative a GPU T4**:

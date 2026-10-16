@@ -56,6 +56,12 @@ flwr run . --stream --run-config "defense_mode='Bulyan' attack_type='targeted_ba
 python plotar_resultados.py
 ```
 
+> [!TIP]
+> **Prefere executar na nuvem com GPU T4 gratuita e sem instalar nada localmente?**
+> * 🌸 **Flower Canônico Puro**: [executar_flower_puro.ipynb](https://colab.research.google.com/github/JM3L0/Flower-Simulacao-Seguranca/blob/main/executar_flower_puro.ipynb) *(ideal para colegas testarem FedAvg/FedMedian/Krum/Bulyan puros com formulário interativo)*
+> * 🔬 **Bateria de Segurança (Artigo 1)**: [executar_no_colab.ipynb](https://colab.research.google.com/github/JM3L0/Flower-Simulacao-Seguranca/blob/main/executar_no_colab.ipynb) *(avaliação empírica sob ataques e backdoors furtivos)*
+> * 📖 Guia detalhado de uso: [docs/1_laboratorio/03_guia_execucao_google_colab.md](docs/1_laboratorio/03_guia_execucao_google_colab.md)
+
 ---
 
 ## 🚨 5 Armadilhas Comuns a Evitar

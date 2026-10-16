@@ -1,0 +1,2 @@
+Categoria,Defesa,Ataque,Dirichlet_Alpha,Poison_Rate,Num_Trials,Acc_Global_Final,Recall_Vitima_Final,ASR_Final,MRT_s
+Ataque Normal,FedAvg,gaussian_noise,0.1,0.4,1,30.0500,31.1000,0.0000,39.1489

@@ -764,12 +764,20 @@ def main(
     custom_scenario: dict | None = None,
     metrics_dir: str = METRICS_DIR,
     output_dir: str = OUTPUT_DIR,
+    base_dir: str | None = None,
 ):
+    if base_dir is None:
+        if "sessoes" in output_dir or "latest" in output_dir:
+            base_dir = os.path.dirname(os.path.abspath(output_dir))
+        else:
+            base_dir = BASE_RESULTS_DIR
+
     print("=" * 78)
     print("  🚀 GERADOR DE FIGURAS CIENTÍFICAS E TABELAS ESTATÍSTICAS (ARTIGO 1)")
     print("=" * 78)
     print(f"  Métricas: {metrics_dir}")
-    print(f"  Gráficos: {output_dir}\n")
+    print(f"  Gráficos: {output_dir}")
+    print(f"  Tabelas:  {base_dir}\n")
 
     os.makedirs(output_dir, exist_ok=True)
     os.makedirs(os.path.join(output_dir, "matrizes_confusao"), exist_ok=True)
@@ -820,7 +828,7 @@ def main(
         plotar_figura4_matrizes_confusao(cenarios, output_dir)
         plotar_figura5_raiox_classes(cenarios, output_dir)
 
-    gerar_tabela_resumo_estatistico(cenarios, BASE_RESULTS_DIR)
+    gerar_tabela_resumo_estatistico(cenarios, base_dir)
 
     print("\n" + "=" * 78)
     print(f"  [✓] Processamento concluído com sucesso em: {output_dir}")
@@ -832,7 +840,41 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Gerador de Figuras Científicas e Tabelas Estatísticas.")
     parser.add_argument("--rounds", type=int, default=None, help="Filtrar horizonte de rodadas alvo (ex: 10 ou 40)")
     parser.add_argument("--modo", type=str, default=None, help="Modo da bateria executada")
-    parser.add_argument("--metrics_dir", type=str, default=METRICS_DIR, help="Diretório das métricas JSON")
-    parser.add_argument("--output_dir", type=str, default=OUTPUT_DIR, help="Diretório de saída dos gráficos")
+    parser.add_argument("--sessao", type=str, default=None, help="Nome da subpasta em sessoes/ para replotar")
+    parser.add_argument("--todas", action="store_true", help="Forçar leitura de todos os JSONs acumulados na raiz")
+    parser.add_argument("--metrics_dir", type=str, default=None, help="Diretório customizado das métricas JSON")
+    parser.add_argument("--output_dir", type=str, default=None, help="Diretório customizado de saída dos gráficos")
     args = parser.parse_args()
-    main(target_rounds=args.rounds, modo_executado=args.modo, metrics_dir=args.metrics_dir, output_dir=args.output_dir)
+
+    m_dir = args.metrics_dir
+    o_dir = args.output_dir
+    b_dir = None
+
+    if args.sessao:
+        session_path = os.path.join(BASE_RESULTS_DIR, "sessoes", args.sessao)
+        m_dir = os.path.join(session_path, "metrics_json")
+        o_dir = os.path.join(session_path, "graficos")
+        b_dir = session_path
+    elif not args.todas and m_dir is None:
+        # Prioriza a pasta latest/ se existir e possuir arquivos de métricas
+        latest_metrics = os.path.join(BASE_RESULTS_DIR, "latest", "metrics_json")
+        if os.path.exists(latest_metrics) and glob.glob(os.path.join(latest_metrics, "*.json")):
+            m_dir = latest_metrics
+            o_dir = os.path.join(BASE_RESULTS_DIR, "latest", "graficos")
+            b_dir = os.path.join(BASE_RESULTS_DIR, "latest")
+        else:
+            m_dir = METRICS_DIR
+            o_dir = OUTPUT_DIR
+            b_dir = BASE_RESULTS_DIR
+    else:
+        m_dir = m_dir or METRICS_DIR
+        o_dir = o_dir or OUTPUT_DIR
+        b_dir = b_dir or BASE_RESULTS_DIR
+
+    main(
+        target_rounds=args.rounds,
+        modo_executado=args.modo,
+        metrics_dir=m_dir,
+        output_dir=o_dir,
+        base_dir=b_dir,
+    )

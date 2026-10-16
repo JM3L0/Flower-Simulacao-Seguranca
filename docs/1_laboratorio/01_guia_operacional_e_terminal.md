@@ -37,12 +37,16 @@ Flower-Simulacao-Seguranca/
     │   ├── client_app.py                          # Nós clientes periféricos
     │   └── attacks.py                             # Biblioteca dos 7 algoritmos de ataque
     │
-    └── resultados_ataque_furtivo/                 # 📁 PASTA EXCLUSIVA DE RESULTADOS
-        ├── README.md                              # Guia de interpretação de dados
-        ├── metrics_json/                          # 📊 Arquivos JSON brutos com todas as métricas
-        ├── graficos/                              # 📈 Figuras PNG geradas com qualidade acadêmica
-        │   └── matrizes_confusao/                 # 🗺️ Heatmaps 10x10 da Matriz de Confusão
-        └── modelos/                               # 💾 Checkpoints dos modelos treinados (.pt)
+    └── resultados_ataque_furtivo/                 # 📁 DIRETÓRIO DE RESULTADOS ORGANIZADOS
+        ├── latest/                                # ⚡ Atalho limpo com a última execução realizada
+        │   ├── graficos/                          # Figuras PNG da rodada mais recente
+        │   ├── metrics_json/                      # Métricas JSON da rodada mais recente
+        │   └── tabela_resumo_estatistico.md       # Tabela consolidada da rodada
+        ├── sessoes/                               # 🗄️ Histórico isolado de todas as sessões (sem sobrescrita)
+        │   └── <timestamp>_<cenario>/             # Pasta autônoma de cada execução com gráficos e métricas
+        ├── graficos/                              # Espelho da última rodada (retrocompatível)
+        ├── metrics_json/                          # Espelho de métricas (retrocompatível)
+        └── modelos/                               # Checkpoints dos modelos treinados (.pt)
 ```
 
 ---
@@ -71,6 +75,9 @@ Flower-Simulacao-Seguranca/
 ---
 
 ## 💻 3. Guia de Instalação e Solução de Erros no Windows
+
+> [!TIP]
+> Para um passo a passo completo do zero (incluindo criação de ambientes virtuais `venv`/`conda`, PyTorch com CUDA e testes de sanidade), consulte o guia dedicado: [00_guia_instalacao_flower.md](00_guia_instalacao_flower.md).
 
 ### Pré-requisito
 * **Python 3.11** ou **Python 3.12** com a opção `Add Python to PATH` marcada.

@@ -16,6 +16,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
+import shutil
 import sys
 import time
 from datetime import datetime, timezone
@@ -88,6 +90,93 @@ CENARIOS_ARTIGO1_BRUTO: list[dict[str, Any]] = [
     {"strategy_name": "Krum", "attack_type": "gaussian_noise", "poison_rate": 0.4, "dirichlet_alpha": 0.1, "seed": 42},
     {"strategy_name": "Bulyan", "attack_type": "gaussian_noise", "poison_rate": 0.4, "dirichlet_alpha": 0.1, "seed": 42},
 ]
+
+
+# =============================================================================
+# GESTÃO DE SESSÕES ISOLADAS E VERSIONAMENTO DE RESULTADOS (OPÇÃO 1)
+# =============================================================================
+def _criar_sessao_experimento(
+    results_base: str,
+    modo: str,
+    custom_scenario: dict[str, Any] | None = None,
+    tag: str | None = None,
+) -> tuple[str, str, str, str, str]:
+    """
+    Cria a estrutura de diretórios para uma sessão isolada de experimentos.
+    Retorna (folder_name, session_dir, metrics_dir, models_dir, graficos_dir).
+    """
+    now_str = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    if tag:
+        slug = re.sub(r"[^\w\s-]", "", tag).strip().replace(" ", "_")
+        folder_name = f"{now_str}_{slug}"
+    elif modo == "customizado" and custom_scenario:
+        strat = custom_scenario.get("strategy_name", "FedAvg")
+        att = custom_scenario.get("attack_type", "custom")
+        folder_name = f"{now_str}_{strat}_{att}"
+    else:
+        folder_name = f"{now_str}_{modo}"
+
+    session_dir = os.path.join(results_base, "sessoes", folder_name)
+    metrics_dir = os.path.join(session_dir, "metrics_json")
+    models_dir = os.path.join(session_dir, "modelos")
+    graficos_dir = os.path.join(session_dir, "graficos")
+
+    os.makedirs(metrics_dir, exist_ok=True)
+    os.makedirs(models_dir, exist_ok=True)
+    os.makedirs(graficos_dir, exist_ok=True)
+
+    return folder_name, session_dir, metrics_dir, models_dir, graficos_dir
+
+
+def _sincronizar_com_latest(session_dir: str, results_base: str) -> None:
+    """
+    Copia os resultados da sessão atual para a pasta latest/
+    e sincroniza a raiz de resultados para garantir retrocompatibilidade.
+    """
+    latest_dir = os.path.join(results_base, "latest")
+
+    # 1. Atualiza latest/ de forma limpa (apenas arquivos desta sessão)
+    if os.path.exists(latest_dir):
+        shutil.rmtree(latest_dir)
+    shutil.copytree(session_dir, latest_dir)
+
+    # 2. Espelha na raiz de resultados_ataque_furtivo para compatibilidade com notebooks e scripts legados
+    graficos_raiz = os.path.join(results_base, "graficos")
+    metrics_raiz = os.path.join(results_base, "metrics_json")
+    modelos_raiz = os.path.join(results_base, "modelos")
+
+    os.makedirs(graficos_raiz, exist_ok=True)
+    os.makedirs(metrics_raiz, exist_ok=True)
+    os.makedirs(modelos_raiz, exist_ok=True)
+
+    session_graficos = os.path.join(session_dir, "graficos")
+    if os.path.exists(session_graficos):
+        for item in os.listdir(session_graficos):
+            src_item = os.path.join(session_graficos, item)
+            dst_item = os.path.join(graficos_raiz, item)
+            if os.path.isdir(src_item):
+                if os.path.exists(dst_item):
+                    shutil.rmtree(dst_item)
+                shutil.copytree(src_item, dst_item)
+            else:
+                shutil.copy2(src_item, dst_item)
+
+    session_metrics = os.path.join(session_dir, "metrics_json")
+    if os.path.exists(session_metrics):
+        for f in os.listdir(session_metrics):
+            if f.endswith(".json"):
+                shutil.copy2(os.path.join(session_metrics, f), os.path.join(metrics_raiz, f))
+
+    session_modelos = os.path.join(session_dir, "modelos")
+    if os.path.exists(session_modelos):
+        for f in os.listdir(session_modelos):
+            if f.endswith(".pt"):
+                shutil.copy2(os.path.join(session_modelos, f), os.path.join(modelos_raiz, f))
+
+    for fname in ["DIRETRIZES_DO_EXPERIMENTO.txt", "tabela_resumo_estatistico.csv", "tabela_resumo_estatistico.md"]:
+        fpath = os.path.join(session_dir, fname)
+        if os.path.exists(fpath):
+            shutil.copy2(fpath, os.path.join(results_base, fname))
 
 
 # =============================================================================
@@ -169,6 +258,8 @@ def _salvar_metricas_e_checkpoint(
     config: dict[str, Any],
     round_records: list[dict[str, Any]],
     round_timings: list[float],
+    metrics_dir: str = METRICS_DIR,
+    models_dir: str = MODELS_DIR,
 ) -> dict[str, Any]:
     """Salva métricas estruturadas em JSON e checkpoint do modelo treinado."""
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
@@ -197,7 +288,7 @@ def _salvar_metricas_e_checkpoint(
         f"pr{config['poison_rate']}_da{config['dirichlet_alpha']}_"
         f"s{config['seed']}_{timestamp}.json"
     )
-    json_path = os.path.join(METRICS_DIR, json_name)
+    json_path = os.path.join(metrics_dir, json_name)
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2, ensure_ascii=False)
     print(f"  ✔ Métricas salvas: {json_path}")
@@ -207,7 +298,7 @@ def _salvar_metricas_e_checkpoint(
         f"model_{config['strategy']}_{config['attack_type']}_"
         f"pr{config['poison_rate']}_da{config['dirichlet_alpha']}_{timestamp}.pt"
     )
-    model_path = os.path.join(MODELS_DIR, model_name)
+    model_path = os.path.join(models_dir, model_name)
     torch.save(global_model.state_dict(), model_path)
 
     return summary
@@ -228,6 +319,8 @@ def simular_cenario(
     learning_rate: float = 0.01,
     local_epochs: int = 2,
     device_str: str | None = None,
+    metrics_dir: str = METRICS_DIR,
+    models_dir: str = MODELS_DIR,
 ) -> dict[str, Any]:
     """Executa um cenário experimental completo com reprodutibilidade estrita."""
     device = torch.device(device_str) if device_str else torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -300,8 +393,11 @@ def simular_cenario(
 
         _imprimir_progresso_rodada(r, num_rounds, test_acc, test_loss, dt, audit_info, attack_type)
 
-    # 4. Persistência de resultados
-    summary = _salvar_metricas_e_checkpoint(global_model, config, round_records, round_timings)
+    # 4. Persistência de resultados na pasta da sessão
+    summary = _salvar_metricas_e_checkpoint(
+        global_model, config, round_records, round_timings,
+        metrics_dir=metrics_dir, models_dir=models_dir,
+    )
 
     # Limpeza explícita de memória
     del global_model, test_loader, client_loaders
@@ -453,8 +549,9 @@ def executar_bateria(
     gerar_graficos: bool = True,
     custom_scenario: dict[str, Any] | None = None,
     override_params: dict[str, Any] | None = None,
-) -> None:
-    """Executa um lote de cenários ou um cenário customizado, acionando a geração de figuras."""
+    tag: str | None = None,
+) -> str:
+    """Executa um lote de cenários ou um cenário customizado em uma pasta de sessão isolada (Opção 1)."""
     if modo == "customizado" and custom_scenario:
         cenarios = [custom_scenario]
     elif modo == "artigo1_furtivo":
@@ -476,9 +573,17 @@ def executar_bateria(
                         continue
                     c[k] = v
 
+    # 1. Cria a pasta isolada da sessão
+    session_name, session_dir, session_metrics, session_models, session_graficos = _criar_sessao_experimento(
+        results_base=RESULTS_DIR,
+        modo=modo,
+        custom_scenario=custom_scenario,
+        tag=tag,
+    )
+
     print("=" * 80)
     print(f"  🚀 EXECUÇÃO DE EXPERIMENTOS ({len(cenarios)} cenário(s) | Modo: {modo})")
-    print(f"  Resultados: {RESULTS_DIR}")
+    print(f"  📁 Pasta da Sessão Isolada: {session_dir}")
     print("=" * 80)
 
     resultados_sessao = []
@@ -486,15 +591,20 @@ def executar_bateria(
         print(f"\n[{i:02d}/{len(cenarios)}] Iniciando cenário...")
         num_rounds = cenario.get("num_rounds", rounds)
         cenario_limpo = {k: v for k, v in cenario.items() if k != "num_rounds"}
-        summary = simular_cenario(**cenario_limpo, num_rounds=num_rounds)
+        summary = simular_cenario(
+            **cenario_limpo,
+            num_rounds=num_rounds,
+            metrics_dir=session_metrics,
+            models_dir=session_models,
+        )
         resultados_sessao.append(summary)
 
     print("\n" + "═" * 80)
     print("  ✔ TODAS AS SIMULAÇÕES FORAM CONCLUÍDAS COM SUCESSO!")
 
-    # Gera o arquivo TXT de diretrizes e configurações estruturadas
+    # 2. Gera o arquivo TXT de diretrizes e configurações estruturadas na pasta da sessão
     _gerar_relatorio_diretrizes_txt(
-        results_dir=RESULTS_DIR,
+        results_dir=session_dir,
         modo=modo,
         rounds=rounds,
         cenarios=cenarios,
@@ -502,13 +612,32 @@ def executar_bateria(
         overrides=override_params,
     )
 
+    # 3. Gera gráficos direcionados exclusivamente para a sessão atual
     if gerar_graficos:
-        print("  Gerando figuras científicas, matrizes de confusão e tabela resumo...")
+        print("  Gerando figuras científicas, matrizes de confusão e tabela resumo da sessão...")
         print("═" * 80 + "\n")
         import plotar_resultados
-        plotar_resultados.main(target_rounds=rounds, modo_executado=modo, custom_scenario=custom_scenario)
+        plotar_resultados.main(
+            target_rounds=rounds,
+            modo_executado=modo,
+            custom_scenario=custom_scenario,
+            metrics_dir=session_metrics,
+            output_dir=session_graficos,
+            base_dir=session_dir,
+        )
     else:
         print("═" * 80 + "\n")
+
+    # 4. Sincroniza com latest/ e espelha para compatibilidade
+    _sincronizar_com_latest(session_dir=session_dir, results_base=RESULTS_DIR)
+
+    print("\n" + "═" * 80)
+    print("  📁 ORGANIZAÇÃO DOS RESULTADOS (OPÇÃO 1 CONCLUÍDA):")
+    print(f"  ✔ Sessão Isolada Salva em : {session_dir}")
+    print(f"  ✔ Atalho da Última Rodada : {os.path.join(RESULTS_DIR, 'latest')}")
+    print("═" * 80 + "\n")
+
+    return session_dir
 
 
 def main() -> None:
@@ -523,6 +652,7 @@ def main() -> None:
         help="Modo de execução da bateria experimental",
     )
     parser.add_argument("--rounds", type=int, default=10, help="Número de rodadas por simulação")
+    parser.add_argument("--tag", type=str, default=None, help="Tag personalizada para nomear a pasta da sessão")
     parser.add_argument("--defesa", type=str, default=None, choices=["FedAvg", "FedMedian", "Krum", "Bulyan"],
                         help="Defesa para cenário customizado")
     parser.add_argument("--ataque", type=str, default=None,
@@ -579,6 +709,7 @@ def main() -> None:
         gerar_graficos=not args.sem_graficos,
         custom_scenario=custom_scenario,
         override_params=override_params,
+        tag=args.tag,
     )
 
 

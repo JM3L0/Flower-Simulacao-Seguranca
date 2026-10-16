@@ -44,7 +44,7 @@ Flower-Simulacao-Seguranca/
 Comece pelo portal central: [docs/00_COMECE_AQUI.md](docs/00_COMECE_AQUI.md)
 
 Módulos disponíveis:
-- **Laboratório**: [docs/1_laboratorio/01_guia_operacional_e_terminal.md](docs/1_laboratorio/01_guia_operacional_e_terminal.md) e [docs/1_laboratorio/02_catalogo_ataques_e_defesas.md](docs/1_laboratorio/02_catalogo_ataques_e_defesas.md)
+- **Laboratório**: [docs/1_laboratorio/00_guia_instalacao_flower.md](docs/1_laboratorio/00_guia_instalacao_flower.md), [docs/1_laboratorio/01_guia_operacional_e_terminal.md](docs/1_laboratorio/01_guia_operacional_e_terminal.md) e [docs/1_laboratorio/02_catalogo_ataques_e_defesas.md](docs/1_laboratorio/02_catalogo_ataques_e_defesas.md)
 - **Pesquisa em Foco (Artigo 1 & 2)**: [docs/2_pesquisa_ativa/01_artigo1_backdoors_e_auditoria.md](docs/2_pesquisa_ativa/01_artigo1_backdoors_e_auditoria.md)
 - **Portfólio & Teoria SPN**: [docs/3_portfolio_e_teoria/01_portfolio_10_ideias_pesquisa.md](docs/3_portfolio_e_teoria/01_portfolio_10_ideias_pesquisa.md) e [docs/3_portfolio_e_teoria/02_modelagem_formal_spn_e_markov.md](docs/3_portfolio_e_teoria/02_modelagem_formal_spn_e_markov.md)
 

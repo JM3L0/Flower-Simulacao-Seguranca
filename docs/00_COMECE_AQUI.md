@@ -12,6 +12,7 @@ docs/
 ├── 00_COMECE_AQUI.md                          # 🧭 Você está aqui (Portal Central e Quickstart)
 │
 ├── 1_laboratorio/                             # 📘 GUIA TÉCNICO E OPERACIONAL
+│   ├── 00_guia_instalacao_flower.md           # 🌸 Guia dedicado de instalação (PyTorch, CUDA, Ray, venv)
 │   ├── 01_guia_operacional_e_terminal.md      # Instalação, arquitetura de código, --run-config e plotagem
 │   ├── 02_catalogo_ataques_e_defesas.md       # Catálogo dos 7 ataques, 4 defesas convencionais, DP e SecAgg
 │   └── 03_guia_execucao_google_colab.md       # ☁️ Guia passo a passo de execução em GPU T4 no Colab

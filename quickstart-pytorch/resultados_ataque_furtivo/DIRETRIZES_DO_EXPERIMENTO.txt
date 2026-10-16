@@ -1,11 +1,11 @@
 ==================================================================================
    DIRETRIZES E CONFIGURAÇÕES DA SESSÃO EXPERIMENTAL (ARTIGO 1 - FL SEGURANÇA)
 ==================================================================================
-Data e Hora (UTC)      : 2026-10-15 20:13:07 UTC
+Data e Hora (UTC)      : 2026-10-16 13:42:50 UTC
 Modo de Execução       : Cenário Individual Customizado
-Dispositivo de Cálculo : CUDA GPU (NVIDIA T400 4GB)
+Dispositivo de Cálculo : CPU
 Total de Cenários      : 1 cenário(s) executado(s)
-Rodadas por Simulação  : 10 rodadas
+Rodadas por Simulação  : 1 rodadas
 
 ----------------------------------------------------------------------------------
 1. HIPERPARÂMETROS GLOBAIS DA FEDERAÇÃO
@@ -13,9 +13,9 @@ Rodadas por Simulação  : 10 rodadas
   • Modelo Neural              : SimpleCNN (Convs 32/64, MaxPool, FC 512, Dropout)
   • Dataset Centralizado       : CIFAR-10 (10 classes: avião, carro, pássaro, gato...)
   • Partição Não-IID           : Dirichlet (Alpha = 0.1)
-  • Total de Clientes (K)      : 10 nós federados
-  • Épocas Locais por Rodada   : 2 épocas
-  • Batch Size Local           : 64
+  • Total de Clientes (K)      : 2 nós federados
+  • Épocas Locais por Rodada   : 1 épocas
+  • Batch Size Local           : 128
   • Taxa de Aprendizado (LR)   : 0.01 (SGD com momentum 0.9)
   • Semente Aleatória (Seed)   : 42 (reprodutibilidade estrita)
 
@@ -32,12 +32,12 @@ Rodadas por Simulação  : 10 rodadas
 ----------------------------------------------------------------------------------
 3. RESULTADOS CONSOLIDADOS POR CENÁRIO NESTA SESSÃO
 ----------------------------------------------------------------------------------
-[01/01] Defesa: FedAvg     | Ataque: gaussian_noise     | Bizantinos: 40.0% | Rodadas: 10
-       • Acurácia Global Final : 36.45%
-       • Perda (Loss) Final     : 1.7525
-       • Recall da Vítima (Gato): 56.00%
+[01/01] Defesa: FedAvg     | Ataque: gaussian_noise     | Bizantinos: 40.0% | Rodadas: 1
+       • Acurácia Global Final : 30.05%
+       • Perda (Loss) Final     : 2.1001
+       • Recall da Vítima (Gato): 31.10%
        • Taxa de Sucesso (ASR)  :  0.00%
-       • Tempo Médio por Rodada : 71.19 s/rodada
+       • Tempo Médio por Rodada : 39.15 s/rodada
        🛡️ [DEFESA RESILIENTE ao Ruído Gaussiano]
 
 ----------------------------------------------------------------------------------
